@@ -74,6 +74,8 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;heigh
 .add-row2 input{flex:1;margin-bottom:0}
 .btn-add{background:var(--or-dim);border:1px solid var(--or);color:var(--or);padding:7px 10px;border-radius:4px;font-size:11px;font-weight:500;cursor:pointer;font-family:var(--fb);transition:background .2s;white-space:nowrap}
 .btn-add:hover{background:var(--or);color:#fff}
+.add-src select{width:100%;background:var(--surf);border:1px solid var(--bdr);color:var(--cr2);padding:7px 9px;border-radius:4px;font-size:11px;font-family:var(--fb);outline:none;margin-bottom:5px;appearance:none;cursor:pointer}
+.add-src select:focus{border-color:var(--or)}
 .main{overflow-y:auto;padding:28px}
 .empty{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:60vh;text-align:center;gap:18px}
 .ehex{width:72px;height:72px;clip-path:polygon(50% 0%,100% 25%,100% 75%,50% 100%,0% 75%,0% 25%);background:var(--or-dim);border:1px solid var(--bdr2);display:grid;place-items:center}
@@ -205,6 +207,14 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;heigh
       <button class="btn-add" onclick="addSrc()">+</button>
     </div>
     <input type="text" id="nn" placeholder="Nom de la source" style="margin-top:5px"/>
+    <select id="nc">
+      <option value="IA Générale">IA Générale</option>
+      <option value="Dirigeants / RH">Dirigeants / RH</option>
+      <option value="Métiers">Métiers</option>
+      <option value="Réglementation">Réglementation</option>
+      <option value="Outils">Outils</option>
+      <option value="Société">Société</option>
+    </select>
   </div>
 </aside>
 <main class="main" id="mainArea">
@@ -295,9 +305,10 @@ async function addSrc(){
   const name=document.getElementById('nn').value.trim();
   if(!url)return toast('Entrez une URL');
   let host;try{host=new URL(url).hostname;}catch{return toast('URL invalide');}
-  const s={id:'c'+Date.now(),name:name||host,url,cat:'IA Générale',is_on:true,position:sources.length+1};
+  const cat=document.getElementById('nc').value;
+  const s={id:'c'+Date.now(),name:name||host,url,cat,is_on:true,position:sources.length+1};
   sources.push(s);renderSrcs();
-  document.getElementById('nu').value='';document.getElementById('nn').value='';
+  document.getElementById('nu').value='';document.getElementById('nn').value='';document.getElementById('nc').selectedIndex=0;
   await sb('sources',{method:'POST',body:JSON.stringify(s),headers:{'Prefer':'resolution=merge-duplicates,return=minimal'}});
   toast('Source ajoutée ✓');
 }
