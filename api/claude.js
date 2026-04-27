@@ -17,11 +17,11 @@ module.exports = async function handler(req, res) {
         'x-api-key': apiKey,
         'anthropic-version': '2023-06-01',
       },
-      body: JSON.stringify(req.body),
+      body: JSON.stringify({ ...req.body, stream: false }),
     });
     const data = await r.json();
     res.status(r.status).json(data);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
-}
+};
