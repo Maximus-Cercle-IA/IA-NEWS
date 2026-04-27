@@ -475,11 +475,7 @@ Règles score: metier 35-40=direct, 20-34=redirigeable; impact 22-25=changement 
     const resp=await fetch(PROXY,{
       method:'POST',
       headers:{'Content-Type':'application/json'},
-<<<<<<< HEAD
-      body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:6000,messages:[{role:'user',content:prompt}]})
-=======
-      body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:8192,messages:[{role:'user',content:prompt}]})
->>>>>>> claude/fix-html-deployment-Prp6R
+      body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:3500,messages:[{role:'user',content:prompt}]})
     });
     if(!resp.ok){
       const errText=await resp.text();
@@ -511,8 +507,12 @@ Règles score: metier 35-40=direct, 20-34=redirigeable; impact 22-25=changement 
     lov.classList.remove('show');render();toast(`${news.length} news analysées ✓`);
   }catch(err){
     lov.classList.remove('show');
-    console.error('Erreur complète:',err);
-    toast('Erreur : '+err.message);
+    console.error('Erreur veille:',err);
+    const msg=err.message||'';
+    if(/timeout|idle|partial|stream/i.test(msg))toast('Délai dépassé — relancez la veille (réponse trop longue)');
+    else if(/401|403|api.key/i.test(msg))toast('Clé API invalide — vérifiez ANTHROPIC_API_KEY dans Vercel');
+    else if(/404/i.test(msg))toast('Route /api/claude introuvable — vérifiez le déploiement');
+    else toast('Erreur Claude : '+(msg.length>80?msg.slice(0,80)+'…':msg));
   }finally{
     btn.disabled=false;
     btn.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8" fill="currentColor" stroke="none"/></svg> Lancer la veille';
