@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cercle IA — Veille</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#0d1a16;--bg2:#0f1f1a;--surf:#142219;--surf2:#1a2e24;
+  --bdr:#1e3a2f;--bdr2:#253f33;
+  --or:#d4793a;--or2:#e8894a;--or-dim:rgba(212,121,58,.12);--or-glow:rgba(212,121,58,.25);
+  --cr:#f0ede6;--cr2:#c8c4bc;--mu:#5a7268;--mu2:#3d5549;
+  --gn:#2d6b45;--gn-bg:rgba(45,107,69,.15);--yw-bg:rgba(212,121,58,.1);
+  --fd:'Playfair Display',serif;--fb:'DM Sans',system-ui,sans-serif;
+}
+html{scroll-behavior:smooth}
+body{font-family:var(--fb);background:var(--bg);color:var(--cr);min-height:100vh;overflow-x:hidden}
+::-webkit-scrollbar{width:5px}::-webkit-scrollbar-track{background:var(--surf)}::-webkit-scrollbar-thumb{background:var(--bdr2);border-radius:3px}
+.app{display:grid;grid-template-columns:252px 1fr;grid-template-rows:60px 1fr;min-height:100vh}
+.nav{grid-column:1/-1;background:var(--bg2);border-bottom:1px solid var(--bdr);display:flex;align-items:center;justify-content:space-between;padding:0 28px;position:sticky;top:0;z-index:100}
+.brand{display:flex;align-items:center;gap:10px}
+.hex{width:30px;height:30px;background:var(--or);clip-path:polygon(50% 0%,100% 25%,100% 75%,50% 100%,0% 75%,0% 25%);display:grid;place-items:center}
+.hex svg{width:12px;height:12px;fill:#fff}
+.brand-name{font-family:var(--fd);font-size:16px;color:var(--cr)}
+.brand-name em{color:var(--or);font-style:normal}
+.week{background:var(--surf);border:1px solid var(--bdr);padding:5px 12px;border-radius:20px;font-size:11px;color:var(--mu);letter-spacing:.06em;text-transform:uppercase}
+.week b{color:var(--cr2);font-weight:400}
+.nav-r{display:flex;align-items:center;gap:8px}
+.pill{display:flex;align-items:center;gap:5px;padding:5px 10px;border-radius:4px;background:var(--surf);border:1px solid var(--bdr);font-size:11px;color:var(--mu)}
+.pill b{color:var(--cr);font-weight:500}
+.pill-dot{width:5px;height:5px;border-radius:50%;background:var(--or)}
+.btn-go{display:flex;align-items:center;gap:7px;background:var(--or);color:#fff;border:none;padding:0 18px;height:36px;border-radius:4px;font-family:var(--fb);font-size:13px;font-weight:500;cursor:pointer;transition:background .2s,box-shadow .2s}
+.btn-go:hover{background:var(--or2);box-shadow:0 4px 18px var(--or-glow)}
+.btn-go:disabled{background:var(--mu2);cursor:not-allowed;box-shadow:none}
+.btn-go svg{width:13px;height:13px;flex-shrink:0}
+.spin{width:12px;height:12px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:rot .7s linear infinite;flex-shrink:0}
+@keyframes rot{to{transform:rotate(360deg)}}
+.side{background:var(--bg2);border-right:1px solid var(--bdr);overflow-y:auto;display:flex;flex-direction:column}
+.slbl{font-size:10px;font-weight:500;letter-spacing:.15em;text-transform:uppercase;color:var(--mu);padding:16px 16px 8px;display:block}
+.fbtn{width:calc(100% - 8px);margin:0 4px;display:flex;align-items:center;justify-content:space-between;padding:8px 12px;border-radius:4px;border:none;background:transparent;color:var(--cr2);font-family:var(--fb);font-size:13px;cursor:pointer;transition:background .15s;text-align:left}
+.fbtn:hover{background:var(--surf2);color:var(--cr)}
+.fbtn.on{background:var(--or-dim);color:var(--or)}
+.fbtn-l{display:flex;align-items:center;gap:7px}
+.cdot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.fcnt{font-size:10px;background:var(--surf2);color:var(--mu);padding:2px 6px;border-radius:10px}
+.fbtn.on .fcnt{background:var(--or-dim);color:var(--or)}
+.fav-cnt{font-size:10px;background:rgba(200,160,50,.08);color:#c8a040;padding:2px 6px;border-radius:10px}
+.score-sec{padding:14px 16px;border-top:1px solid var(--bdr)}
+.score-row{display:flex;justify-content:space-between;margin-bottom:8px}
+.score-row span{font-size:10px;font-weight:500;letter-spacing:.12em;text-transform:uppercase;color:var(--mu)}
+#svd{color:var(--or)}
+input[type=range]{width:100%;-webkit-appearance:none;height:3px;border-radius:2px;background:var(--bdr2);outline:none}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;background:var(--or);border-radius:50%;cursor:pointer}
+.score-hints{display:flex;justify-content:space-between;margin-top:5px}
+.score-hints span{font-size:10px;color:var(--mu)}
+.score-hints span:last-child{color:var(--or)}
+.src-item{display:flex;align-items:center;gap:8px;padding:7px 12px;cursor:pointer;transition:background .15s}
+.src-item:hover{background:var(--surf2)}
+.tog{width:26px;height:14px;border-radius:7px;background:var(--bdr2);position:relative;cursor:pointer;transition:background .2s;flex-shrink:0}
+.tog.on{background:var(--or)}
+.tog::after{content:'';position:absolute;width:10px;height:10px;background:#fff;border-radius:50%;top:2px;left:2px;transition:transform .2s}
+.tog.on::after{transform:translateX(12px)}
+.src-name{font-size:12px;color:var(--cr2);flex:1}
+.src-cat{font-size:10px;color:var(--mu)}
+.rm-btn{font-size:16px;cursor:pointer;color:var(--mu);opacity:.35;transition:opacity .2s;padding:2px 4px;background:transparent;border:none;line-height:1}
+.rm-btn:hover{opacity:.8;color:var(--cr)}
+.add-src{padding:10px 14px;border-top:1px solid var(--bdr);margin-top:4px}
+.add-src input{width:100%;background:var(--surf);border:1px solid var(--bdr);color:var(--cr);padding:7px 9px;border-radius:4px;font-size:11px;font-family:var(--fb);outline:none;margin-bottom:5px}
+.add-src input:focus{border-color:var(--or)}
+.add-src input::placeholder{color:var(--mu)}
+.add-row2{display:flex;gap:5px}
+.add-row2 input{flex:1;margin-bottom:0}
+.btn-add{background:var(--or-dim);border:1px solid var(--or);color:var(--or);padding:7px 10px;border-radius:4px;font-size:11px;font-weight:500;cursor:pointer;font-family:var(--fb);transition:background .2s;white-space:nowrap}
+.btn-add:hover{background:var(--or);color:#fff}
+.main{overflow-y:auto;padding:28px}
+.empty{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:60vh;text-align:center;gap:18px}
+.ehex{width:72px;height:72px;clip-path:polygon(50% 0%,100% 25%,100% 75%,50% 100%,0% 75%,0% 25%);background:var(--or-dim);border:1px solid var(--bdr2);display:grid;place-items:center}
+.ehex svg{width:28px;height:28px;stroke:var(--or);fill:none;stroke-width:1.5}
+.empty h2{font-family:var(--fd);font-size:26px;font-weight:400}
+.empty p{font-size:13px;color:var(--mu);max-width:300px;line-height:1.7}
+.etip{background:var(--surf);border:1px solid var(--bdr);padding:10px 16px;border-radius:4px;font-size:12px;color:var(--mu);display:flex;align-items:center;gap:7px}
+.etip svg{width:13px;height:13px;stroke:var(--or);fill:none;flex-shrink:0}
+.cat-grp{margin-bottom:36px}
+.cat-hdr{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+.cat-lbl{font-size:10px;font-weight:500;letter-spacing:.14em;text-transform:uppercase;color:#fff;padding:4px 10px;border-radius:3px}
+.cat-cnt{font-size:11px;color:var(--mu)}
+.cat-div{flex:1;height:1px;background:var(--bdr)}
+.news-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(360px,1fr));gap:14px}
+.card{background:var(--surf);border:1px solid var(--bdr);border-radius:6px;overflow:hidden;transition:border-color .2s,box-shadow .2s}
+.card:hover{border-color:var(--bdr2);box-shadow:0 6px 24px rgba(0,0,0,.25)}
+.card.fav{border-color:rgba(200,160,64,.3)}
+.ch{padding:14px 14px 10px;display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
+.ch-l{flex:1;min-width:0}
+.csrc-row{display:flex;align-items:center;gap:7px;margin-bottom:7px}
+.csrc{font-size:11px;font-weight:500;color:var(--or)}
+.cdate{font-size:11px;color:var(--mu)}
+.cdot-s{color:var(--bdr2)}
+.ctitle{font-size:14px;font-weight:500;color:var(--cr);line-height:1.4}
+.ch-r{display:flex;flex-direction:column;align-items:flex-end;gap:7px;flex-shrink:0}
+.fv-btn{background:transparent;border:none;cursor:pointer;font-size:15px;opacity:.3;transition:opacity .2s;padding:2px}
+.fv-btn:hover{opacity:.7}
+.fv-btn.on{opacity:1}
+.sc{width:38px;height:38px;border-radius:50%;display:grid;place-items:center;font-size:12px;font-weight:500;border:1.5px solid;flex-shrink:0}
+.sc-a{background:var(--gn-bg);border-color:var(--gn);color:#5dc488}
+.sc-b{background:var(--yw-bg);border-color:var(--or);color:var(--or)}
+.sc-c{background:var(--surf2);border-color:var(--bdr2);color:var(--mu)}
+.cbody{padding:0 14px 12px}
+.csum{font-size:12.5px;color:var(--cr2);line-height:1.6;font-weight:300}
+.cbdgs{display:flex;flex-wrap:wrap;gap:4px;padding:10px 14px 0;border-top:1px solid var(--bdr)}
+.bdg{font-size:10px;font-weight:500;letter-spacing:.05em;padding:2px 8px;border-radius:20px;border:1px solid}
+.b-post{background:var(--gn-bg);border-color:rgba(45,107,69,.4);color:#5dc488}
+.b-int{background:var(--yw-bg);border-color:rgba(212,121,58,.3);color:var(--or)}
+.b-wat{background:var(--surf2);border-color:var(--bdr2);color:var(--mu)}
+.b-met{background:rgba(74,94,200,.1);border-color:rgba(74,94,200,.3);color:#8898f0}
+.b-imp{background:rgba(212,121,58,.08);border-color:rgba(212,121,58,.2);color:#d4953a}
+.b-brk{background:rgba(200,80,80,.1);border-color:rgba(200,80,80,.3);color:#e08080}
+.b-nws{background:rgba(200,160,50,.08);border-color:rgba(200,160,50,.25);color:#c8a040}
+.b-aut{background:rgba(160,100,220,.1);border-color:rgba(160,100,220,.3);color:#b880f0}
+.cact{display:flex;gap:5px;padding:10px 14px;border-top:1px solid var(--bdr)}
+.ab{flex:1;display:flex;align-items:center;justify-content:center;gap:4px;padding:7px 5px;border-radius:4px;border:1px solid var(--bdr);background:transparent;color:var(--mu);font-size:11px;font-weight:500;font-family:var(--fb);cursor:pointer;transition:all .15s;white-space:nowrap}
+.ab:hover{border-color:var(--bdr2);color:var(--cr2);background:var(--surf2)}
+.ab.on{border-color:var(--or);color:var(--or);background:var(--or-dim)}
+.ab svg{width:11px;height:11px;stroke:currentColor;fill:none;stroke-width:1.8;flex-shrink:0}
+.xpanel{display:none;border-top:1px solid var(--bdr)}
+.xpanel.open{display:block}
+.xin{padding:14px}
+.ang-item{padding:9px 0;border-bottom:1px solid var(--bdr)}
+.ang-item:last-child{border-bottom:none;padding-bottom:0}
+.ang-num{font-size:10px;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:var(--or);margin-bottom:4px;display:flex;align-items:center;gap:7px}
+.atag{font-size:9px;padding:2px 6px;border-radius:10px}
+.atag-v{background:rgba(200,160,50,.1);border:1px solid rgba(200,160,50,.2);color:#c8a040}
+.atag-c{background:rgba(74,94,200,.1);border:1px solid rgba(74,94,200,.2);color:#8898f0}
+.ang-desc{font-size:12.5px;color:var(--cr2);line-height:1.55;font-weight:300}
+.pact{display:flex;gap:6px;margin-top:12px;padding-top:10px;border-top:1px solid var(--bdr)}
+.cpbtn{flex:1;display:flex;align-items:center;justify-content:center;gap:5px;padding:7px;border-radius:4px;border:1px solid var(--bdr);background:transparent;color:var(--mu);font-size:11px;font-weight:500;font-family:var(--fb);cursor:pointer;transition:all .15s}
+.cpbtn:hover{border-color:var(--or);color:var(--or);background:var(--or-dim)}
+.cpbtn svg{width:11px;height:11px;stroke:currentColor;fill:none;stroke-width:1.8}
+.ptxt{font-size:11px;color:var(--cr2);line-height:1.6;white-space:pre-wrap;font-family:'Courier New',monospace;background:var(--bg);padding:12px;border-radius:4px;border:1px solid var(--bdr);max-height:220px;overflow-y:auto}
+#lov{position:fixed;inset:0;background:rgba(13,26,22,.93);backdrop-filter:blur(8px);z-index:200;display:none;flex-direction:column;align-items:center;justify-content:center;gap:24px}
+#lov.show{display:flex}
+.lhex{width:64px;height:64px;clip-path:polygon(50% 0%,100% 25%,100% 75%,50% 100%,0% 75%,0% 25%);background:var(--or-dim);display:grid;place-items:center;animation:pulse 2s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:.6;transform:scale(.95)}50%{opacity:1;transform:scale(1)}}
+.lhex svg{width:26px;height:26px;stroke:var(--or);fill:none;stroke-width:1.5}
+.ltit{font-family:var(--fd);font-size:24px;font-weight:400;color:var(--cr)}
+.lsub{font-size:12px;color:var(--mu);text-align:center;max-width:280px;line-height:1.6}
+.lpbar{width:280px}
+.ltrack{height:2px;background:var(--bdr);border-radius:1px;overflow:hidden}
+.lfill{height:100%;background:var(--or);border-radius:1px;transition:width .5s ease;width:0}
+.lpct{font-size:10px;color:var(--mu);text-align:right;margin-top:5px}
+.lsteps{display:flex;flex-direction:column;gap:6px;width:280px}
+.lstep{display:flex;align-items:center;gap:8px;font-size:11px;color:var(--mu2);transition:color .3s}
+.lstep.done{color:var(--or)}
+.lstep.cur{color:var(--cr)}
+.ldot{width:4px;height:4px;border-radius:50%;background:currentColor;flex-shrink:0}
+#toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(10px);background:var(--surf2);border:1px solid var(--bdr2);color:var(--cr);padding:9px 18px;border-radius:4px;font-size:12px;z-index:300;opacity:0;transition:opacity .3s,transform .3s;pointer-events:none}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.lc-ia{background:#252860}.lc-me{background:#152e20}.lc-re{background:#2e1515}.lc-ed{background:#152030}.lc-ou{background:#2e2010}.lc-so{background:#22152e}
+.dc-ia{background:#8898f0}.dc-me{background:#5dc488}.dc-re{background:#e08080}.dc-ed{background:#60b8e8}.dc-ou{background:#c8a040}.dc-so{background:#b880f0}
+</style>
+</head>
+<body>
+<div class="app">
+<nav class="nav">
+  <div class="brand">
+    <div class="hex"><svg viewBox="0 0 24 24"><path d="M12 2L22 7v10L12 22 2 17V7z"/></svg></div>
+    <span class="brand-name">Cercle IA <em>News</em></span>
+  </div>
+  <div class="week">Semaine du <b id="wlbl">—</b></div>
+  <div class="nav-r">
+    <div class="pill"><div class="pill-dot"></div><b id="stotal">0</b>&nbsp;analysés</div>
+    <div class="pill">⭐&nbsp;<b id="sfavs">0</b>&nbsp;favoris</div>
+    <button class="btn-go" id="gob" onclick="launch()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8" fill="currentColor" stroke="none"/></svg>
+      Lancer la veille
+    </button>
+  </div>
+</nav>
+<aside class="side">
+  <span class="slbl">Filtres</span>
+  <div style="padding:0 4px">
+    <button class="fbtn on" onclick="setTab('all',this)"><span class="fbtn-l">Toutes les news</span><span class="fcnt" id="cntAll">0</span></button>
+    <button class="fbtn" onclick="setTab('favs',this)"><span class="fbtn-l">⭐ Favoris</span><span class="fav-cnt" id="cntFav">0</span></button>
+  </div>
+  <span class="slbl" style="margin-top:6px">Catégories</span>
+  <div style="padding:0 4px">
+    <button class="fbtn" onclick="setTab('ia',this)"><span class="fbtn-l"><span class="cdot dc-ia"></span>IA Générale</span><span class="fcnt" id="c-ia">0</span></button>
+    <button class="fbtn" onclick="setTab('me',this)"><span class="fbtn-l"><span class="cdot dc-me"></span>Métiers</span><span class="fcnt" id="c-me">0</span></button>
+    <button class="fbtn" onclick="setTab('re',this)"><span class="fbtn-l"><span class="cdot dc-re"></span>Réglementation</span><span class="fcnt" id="c-re">0</span></button>
+    <button class="fbtn" onclick="setTab('ed',this)"><span class="fbtn-l"><span class="cdot dc-ed"></span>Éducation</span><span class="fcnt" id="c-ed">0</span></button>
+    <button class="fbtn" onclick="setTab('ou',this)"><span class="fbtn-l"><span class="cdot dc-ou"></span>Outils & Usages</span><span class="fcnt" id="c-ou">0</span></button>
+    <button class="fbtn" onclick="setTab('so',this)"><span class="fbtn-l"><span class="cdot dc-so"></span>Société & Emploi</span><span class="fcnt" id="c-so">0</span></button>
+  </div>
+  <div class="score-sec">
+    <div class="score-row"><span>Score minimum</span><span id="svd">60</span></div>
+    <input type="range" min="0" max="100" value="60" step="5" id="sr" oninput="onScore(this.value)">
+    <div class="score-hints"><span>Tout</span><span>80+ À poster</span></div>
+  </div>
+  <span class="slbl" style="border-top:1px solid var(--bdr)">Sources</span>
+  <div id="srcList" style="padding:0 4px"></div>
+  <div class="add-src">
+    <div class="add-row2">
+      <input type="text" id="nu" placeholder="https://…"/>
+      <button class="btn-add" onclick="addSrc()">+</button>
+    </div>
+    <input type="text" id="nn" placeholder="Nom de la source" style="margin-top:5px"/>
+  </div>
+</aside>
+<main class="main" id="mainArea">
+  <div class="empty" id="empt">
+    <div class="ehex"><svg viewBox="0 0 24 24"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg></div>
+    <h2>Prêt pour la veille</h2>
+    <p>Cliquez sur <strong style="color:var(--or)">Lancer la veille</strong> pour extraire et scorer les actualités IA de la semaine.</p>
+    <div class="etip"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>Lundi matin — lancez, sélectionnez, copiez le brief pour Tarik</div>
+  </div>
+  <div id="res" style="display:none"></div>
+</main>
+</div>
+<div id="lov">
+  <div class="lhex"><svg viewBox="0 0 24 24"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg></div>
+  <div class="ltit">Analyse en cours…</div>
+  <div class="lsub" id="lmsg">Lecture des sources IA de la semaine</div>
+  <div class="lpbar"><div class="ltrack"><div class="lfill" id="lf"></div></div><div class="lpct" id="lpct">0%</div></div>
+  <div class="lsteps" id="lsteps"></div>
+</div>
+<div id="toast"></div>
+<script>
+const SB='https://yybmytkaxnditlmhspft.supabase.co';
+const SK='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl5Ym15dGtheG5kaXRsbWhzcGZ0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzcyNzA2NTAsImV4cCI6MjA5Mjg0NjY1MH0.ImN0nekJKPAX35Yrlm-cFCIBtGfaTUyl5C4mP9TNVUo';
+const PROXY='https://yybmytkaxnditlmhspft.supabase.co/functions/v1/claude-proxy';
+
+const CATS={
+  'IA Générale & Big Tech':{k:'ia',lc:'lc-ia',dc:'dc-ia'},
+  'Métiers & Professions':{k:'me',lc:'lc-me',dc:'dc-me'},
+  'Réglementation & Éthique':{k:'re',lc:'lc-re',dc:'dc-re'},
+  'Éducation & Formation':{k:'ed',lc:'lc-ed',dc:'dc-ed'},
+  'Outils & Usages Pratiques':{k:'ou',lc:'lc-ou',dc:'dc-ou'},
+  'Société & Emploi':{k:'so',lc:'lc-so',dc:'dc-so'}
+};
+const CATBYKEY=Object.fromEntries(Object.entries(CATS).map(([n,v])=>[v.k,n]));
+
+let sources=[],news=[],favs=new Set(),tab='all',scoreMin=60,xp={};
+
+async function sb(path,opts={}){
+  const h={'apikey':SK,'Authorization':'Bearer '+SK,'Content-Type':'application/json','Prefer':'return=representation',...(opts.headers||{})};
+  const r=await fetch(SB+'/rest/v1/'+path,{headers:h,...opts});
+  if(!r.ok)throw new Error(await r.text());
+  const t=await r.text();return t?JSON.parse(t):[];
+}
+
+function weekKey(){const n=new Date(),d=new Date(n);d.setDate(n.getDate()-((n.getDay()+6)%7));return d.toISOString().slice(0,10);}
+function setWeek(){
+  const n=new Date(),m=new Date(n);m.setDate(n.getDate()-((n.getDay()+6)%7));
+  const s=new Date(m);s.setDate(m.getDate()+6);
+  const f=d=>d.toLocaleDateString('fr-FR',{day:'numeric',month:'short'});
+  document.getElementById('wlbl').textContent=`${f(m)} – ${f(s)}`;
+}
+
+async function loadSources(){sources=await sb('sources?select=*&order=position');}
+async function loadNews(){news=await sb(`news?week_key=eq.${weekKey()}&select=*&order=score.desc`);}
+async function loadFavs(){const r=await sb('favorites?select=news_id');favs=new Set(r.map(x=>x.news_id));}
+async function patchSrc(id,data){await sb(`sources?id=eq.${id}`,{method:'PATCH',body:JSON.stringify(data)});}
+async function deleteSrc(id){await sb(`sources?id=eq.${id}`,{method:'DELETE'});}
+async function saveAllNews(items){
+  const wk=weekKey();
+  await sb(`news?week_key=eq.${wk}`,{method:'DELETE'});
+  if(!items.length)return;
+  await sb('news',{method:'POST',body:JSON.stringify(items.map(n=>({
+    id:n.id,title:n.title,source:n.source,url:n.url||'',date:n.date||'',
+    category:n.category||'IA Générale & Big Tech',summary:n.summary||'',
+    full_text:n.full_text||n.fullText||'',score:n.score||0,
+    scores:n.scores||null,angles:n.angles||null,week_key:wk
+  })))});
+}
+async function togFavDB(id){
+  if(favs.has(id)){await sb(`favorites?news_id=eq.${id}`,{method:'DELETE'});favs.delete(id);}
+  else{await sb('favorites',{method:'POST',body:JSON.stringify({news_id:id})});favs.add(id);}
+}
+
+function renderSrcs(){
+  document.getElementById('srcList').innerHTML=sources.map(s=>`
+    <div class="src-item">
+      <div class="tog${s.is_on?' on':''}" onclick="togSrc('${s.id}',${!s.is_on})"></div>
+      <div style="flex:1;min-width:0"><div class="src-name">${s.name}</div><div class="src-cat">${s.cat}</div></div>
+      <button class="rm-btn" onclick="rmSrc('${s.id}')">×</button>
+    </div>`).join('');
+}
+async function togSrc(id,val){const s=sources.find(x=>x.id===id);if(!s)return;s.is_on=val;renderSrcs();await patchSrc(id,{is_on:val});}
+async function rmSrc(id){sources=sources.filter(x=>x.id!==id);renderSrcs();await deleteSrc(id);}
+async function addSrc(){
+  const url=document.getElementById('nu').value.trim();
+  const name=document.getElementById('nn').value.trim();
+  if(!url)return toast('Entrez une URL');
+  let host;try{host=new URL(url).hostname;}catch{return toast('URL invalide');}
+  const s={id:'c'+Date.now(),name:name||host,url,cat:'IA Générale',is_on:true,position:sources.length+1};
+  sources.push(s);renderSrcs();
+  document.getElementById('nu').value='';document.getElementById('nn').value='';
+  await sb('sources',{method:'POST',body:JSON.stringify(s),headers:{'Prefer':'resolution=merge-duplicates,return=minimal'}});
+  toast('Source ajoutée ✓');
+}
+
+function onScore(v){scoreMin=parseInt(v);document.getElementById('svd').textContent=v;render();}
+function setTab(t,btn){tab=t;document.querySelectorAll('.fbtn').forEach(b=>b.classList.remove('on'));if(btn)btn.classList.add('on');render();}
+
+function scCls(s){return s>=80?'sc-a':s>=60?'sc-b':'sc-c';}
+function gbdg(s){
+  if(s>=80)return '<span class="bdg b-post">À poster ✅</span>';
+  if(s>=60)return '<span class="bdg b-int">Intéressant</span>';
+  return '<span class="bdg b-wat">À surveiller</span>';
+}
+function etiq(n){
+  const b=[];
+  const sc=n.scores?(typeof n.scores==='string'?JSON.parse(n.scores):n.scores):null;
+  if(sc){
+    if(sc.metier>=35)b.push('<span class="bdg b-met">Métier direct 🎯</span>');
+    else if(sc.metier>=20)b.push('<span class="bdg b-met">Angle métier possible</span>');
+    if(sc.impact>=22)b.push('<span class="bdg b-imp">Impact fort ⚡</span>');
+    if(sc.fraicheur>=9)b.push('<span class="bdg b-brk">Breaking 🔴</span>');
+    if(sc.viral>=9)b.push('<span class="bdg b-nws">Newsworthy 🔥</span>');
+    if(sc.source>=13)b.push('<span class="bdg b-aut">Source d\'autorité</span>');
+  }
+  return b.join('');
+}
+function ptext(n){
+  const angs=n.angles?(typeof n.angles==='string'?JSON.parse(n.angles):n.angles)
+    .map((a,i)=>`Angle ${i+1} — ${a.name} [${a.type}]\n${a.description}`).join('\n\n'):'—';
+  return `ARTICLE\nTitre : ${n.title}\nSource : ${n.source} · ${n.date}\n\n${n.full_text||n.summary}\n\nCONTEXTE CERCLE IA\nCercle IA forme des professionnels (avocats, RH, médecins, consultants, dirigeants) à l'IA.\nVoix Tarik Hennen : sérieux, direct, sans jargon. Règle : décoder pour la cible, pas relayer.\n\n3 ANGLES\n${angs}\n\nPROMPT\nTu es Tarik Hennen, fondateur de Cercle IA. Rédige un post LinkedIn à partir de cet article.\n120-180 mots · 1ère phrase 10 mots max · vouvoiement · pas emojis/hashtags · conditionnel sur risques · décoder pour un professionnel précis · Hook / Développement / Conclusion ouverte`;
+}
+
+function cardH(n){
+  const fv=favs.has(n.id),e=xp[n.id]||{};
+  const angs=n.angles?(typeof n.angles==='string'?JSON.parse(n.angles):n.angles):[];
+  const cm=CATS[n.category]||{lc:'lc-ia'};
+  return `<div class="card${fv?' fav':''}" id="cd_${n.id}">
+    <div class="ch">
+      <div class="ch-l">
+        <div class="csrc-row"><span class="csrc">${n.source}</span><span class="cdot-s">·</span><span class="cdate">${n.date}</span></div>
+        <div class="ctitle">${n.title}</div>
+      </div>
+      <div class="ch-r">
+        <button class="fv-btn${fv?' on':''}" onclick="togFav('${n.id}')">${fv?'⭐':'☆'}</button>
+        <div class="sc ${scCls(n.score)}">${n.score}</div>
+      </div>
+    </div>
+    <div class="cbody"><div class="csum">${n.summary}</div></div>
+    <div class="cbdgs">${gbdg(n.score)}${etiq(n)}</div>
+    <div class="cact">
+      <button class="ab${e.a?' on':''}" onclick="togX('${n.id}','a')">
+        <svg viewBox="0 0 24 24"><path d="M9.663 17h4.673M12 3v1m6.364 1.636-.707.707M21 12h-1M4 12H3m3.343-5.657-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/></svg>
+        Angles
+      </button>
+      <button class="ab" onclick="cpArt('${n.id}')">
+        <svg viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+        Copier l'article
+      </button>
+      <button class="ab${e.p?' on':''}" onclick="togX('${n.id}','p')">
+        <svg viewBox="0 0 24 24"><path d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+        Prompt
+      </button>
+    </div>
+    <div class="xpanel${e.a?' open':''}" id="xpa_${n.id}">
+      <div class="xin">
+        ${angs.map((a,i)=>`<div class="ang-item">
+          <div class="ang-num">Angle ${i+1} — ${a.name} <span class="atag ${a.type==='Visibilité'?'atag-v':'atag-c'}">${a.type}</span></div>
+          <div class="ang-desc">${a.description}</div>
+        </div>`).join('')}
+        <div class="pact"><button class="cpbtn" onclick="cpAngs('${n.id}')"><svg viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>Copier les angles</button></div>
+      </div>
+    </div>
+    <div class="xpanel${e.p?' open':''}" id="xpp_${n.id}">
+      <div class="xin">
+        <div class="ptxt" id="pt_${n.id}">${ptext(n)}</div>
+        <div class="pact">
+          <button class="cpbtn" onclick="cpPrm('${n.id}')"><svg viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>Copier</button>
+          <button class="cpbtn" onclick="dlPrm('${n.id}')"><svg viewBox="0 0 24 24"><path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4-4 4m0 0-4-4m4 4V4"/></svg>Télécharger .txt</button>
+        </div>
+      </div>
+    </div>
+  </div>`;
+}
+
+function updCounts(){
+  const f=news.filter(n=>n.score>=scoreMin);
+  document.getElementById('cntAll').textContent=f.length;
+  document.getElementById('cntFav').textContent=[...favs].filter(id=>f.find(n=>n.id===id)).length;
+  document.getElementById('stotal').textContent=news.length;
+  document.getElementById('sfavs').textContent=favs.size;
+  Object.entries(CATS).forEach(([cat,{k}])=>{
+    const el=document.getElementById('c-'+k);
+    if(el)el.textContent=f.filter(n=>n.category===cat).length;
+  });
+}
+
+function render(){
+  updCounts();
+  const em=document.getElementById('empt'),rs=document.getElementById('res');
+  if(!news.length){em.style.display='flex';rs.style.display='none';return;}
+  em.style.display='none';rs.style.display='block';
+  let items=news.filter(n=>n.score>=scoreMin);
+  if(tab==='favs')items=items.filter(n=>favs.has(n.id));
+  else if(tab!=='all'){const cat=CATBYKEY[tab];if(cat)items=items.filter(n=>n.category===cat);}
+  if(!items.length){rs.innerHTML='<div class="empty" style="min-height:40vh"><div class="ehex" style="width:56px;height:56px"><svg viewBox="0 0 24 24" style="width:22px;height:22px"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg></div><h2 style="font-size:18px">Aucune news ici</h2><p>Ajustez le score ou lancez une nouvelle veille.</p></div>';return;}
+  const byCat={};
+  items.forEach(n=>{if(!byCat[n.category])byCat[n.category]=[];if(byCat[n.category].length<5)byCat[n.category].push(n);});
+  rs.innerHTML=Object.entries(byCat).map(([cat,its])=>{
+    const m=CATS[cat]||{lc:'lc-ia'};
+    return `<div class="cat-grp">
+      <div class="cat-hdr"><span class="cat-lbl ${m.lc}">${cat}</span><span class="cat-cnt">${its.length} news</span><div class="cat-div"></div></div>
+      <div class="news-grid">${its.map(cardH).join('')}</div>
+    </div>`;
+  }).join('');
+}
+
+function togX(id,type){
+  if(!xp[id])xp[id]={};xp[id][type]=!xp[id][type];
+  const c=document.getElementById(`cd_${id}`);const n=news.find(x=>x.id===id);
+  if(c&&n)c.outerHTML=cardH(n);
+}
+async function togFav(id){
+  await togFavDB(id);updCounts();
+  const c=document.getElementById(`cd_${id}`);const n=news.find(x=>x.id===id);
+  if(c&&n)c.outerHTML=cardH(n);
+  toast(favs.has(id)?'Ajouté aux favoris ⭐':'Retiré des favoris');
+}
+function cpAngs(id){const n=news.find(x=>x.id===id);if(!n?.angles)return;const a=typeof n.angles==='string'?JSON.parse(n.angles):n.angles;navigator.clipboard.writeText(a.map((x,i)=>`Angle ${i+1} — ${x.name} [${x.type}]\n${x.description}`).join('\n\n')).then(()=>toast('Angles copiés ✓'));}
+function cpArt(id){const n=news.find(x=>x.id===id);if(!n)return;navigator.clipboard.writeText(`${n.title}\n${n.source} · ${n.date}\n\n${n.full_text||n.summary}`).then(()=>toast('Article copié ✓'));}
+function cpPrm(id){const el=document.getElementById(`pt_${id}`);if(el)navigator.clipboard.writeText(el.textContent).then(()=>toast('Prompt copié ✓'));}
+function dlPrm(id){const n=news.find(x=>x.id===id);if(!n)return;const b=new Blob([ptext(n)],{type:'text/plain'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=`brief_${n.id}.txt`;a.click();toast('Téléchargé ✓');}
+function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2200);}
+function setP(p){document.getElementById('lf').style.width=p+'%';document.getElementById('lpct').textContent=Math.round(p)+'%';}
+
+async function launch(){
+  const active=sources.filter(s=>s.is_on);
+  if(!active.length)return toast('Activez au moins une source');
+  const btn=document.getElementById('gob');
+  btn.disabled=true;btn.innerHTML='<div class="spin"></div> Analyse…';
+  const lov=document.getElementById('lov');lov.classList.add('show');
+  const steps=[...active.map(s=>`Lecture : ${s.name}`),'Scoring & filtrage','Sauvegarde'];
+  let cur=0;
+  const renderSteps=()=>{document.getElementById('lsteps').innerHTML=steps.map((s,i)=>`<div class="lstep${i<cur?' done':i===cur?' cur':''}"><div class="ldot"></div>${s}${i<cur?' ✓':''}</div>`).join('');};
+  renderSteps();setP(2);
+  for(let i=0;i<active.length;i++){
+    document.getElementById('lmsg').textContent=`Lecture de ${active[i].name}…`;
+    setP(5+Math.round((i/active.length)*55));cur=i;renderSteps();
+    await new Promise(r=>setTimeout(r,200));cur=i+1;renderSteps();
+  }
+  document.getElementById('lmsg').textContent='Scoring…';setP(65);cur=active.length;renderSteps();
+  const today=new Date().toLocaleDateString('fr-FR',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+  const prompt=`Veille IA Cercle IA — ${today}
+Sources: ${active.map(s=>`${s.name}(${s.cat})`).join(', ')}
+
+Génère 10-12 actualités IA réalistes de cette semaine pour des professionnels (avocats, RH, médecins, consultants, dirigeants PME).
+
+Retourne UNIQUEMENT ce tableau JSON (commence par [, aucun texte avant ni après):
+[{"id":"n1","title":"...","source":"nom source","url":"url","date":"JJ/MM/AAAA","category":"IA Générale & Big Tech|Métiers & Professions|Réglementation & Éthique|Éducation & Formation|Outils & Usages Pratiques|Société & Emploi","summary":"2-3 phrases décodant pour un pro","full_text":"100 mots max","score":40-98,"scores":{"metier":0-40,"impact":0-25,"source":0-15,"fraicheur":0-10,"viral":0-10},"angles":[{"name":"nom","description":"angle LinkedIn concret","type":"Visibilité"},{"name":"nom","description":"...","type":"Crédibilité"},{"name":"nom","description":"...","type":"Visibilité"}]}]
+
+Règles score: metier 35-40=direct, 20-34=redirigeable; impact 22-25=changement concret; source 13-15=institution majeure; fraicheur 9-10=<3j; viral 9-10=chiffre choc. score=somme. Max 5/catégorie. Ordre décroissant. Score<40 exclus.`;
+
+  try{
+    const resp=await fetch(PROXY,{
+      method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+SK},
+      body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:3500,messages:[{role:'user',content:prompt}]})
+    });
+    if(!resp.ok){
+      const errText=await resp.text();
+      throw new Error('Proxy '+resp.status+': '+errText);
+    }
+    const data=await resp.json();
+    const raw=data.content.filter(b=>b.type==='text').map(b=>b.text).join('');
+    setP(88);document.getElementById('lmsg').textContent='Sauvegarde…';cur=active.length+1;renderSteps();
+    const s=raw.indexOf('['),e=raw.lastIndexOf(']');
+    if(s===-1||e===-1||e<=s)throw new Error('Réponse JSON invalide');
+    const parsed=JSON.parse(raw.slice(s,e+1));
+    news=parsed.filter(n=>n.score>=40).sort((a,b)=>b.score-a.score);
+    await saveAllNews(news);
+    setP(100);cur=steps.length;renderSteps();
+    await new Promise(r=>setTimeout(r,400));
+    lov.classList.remove('show');render();toast(`${news.length} news analysées ✓`);
+  }catch(err){
+    lov.classList.remove('show');
+    console.error('Erreur complète:',err);
+    toast('Erreur : '+err.message);
+  }finally{
+    btn.disabled=false;
+    btn.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8" fill="currentColor" stroke="none"/></svg> Lancer la veille';
+  }
+}
+
+async function init(){
+  setWeek();
+  try{
+    await Promise.all([loadSources(),loadNews(),loadFavs()]);
+    renderSrcs();if(news.length)render();
+  }catch(err){
+    console.error('Init:',err);
+    toast('Erreur connexion Supabase — vérifiez la console');
+  }
+}
+init();
+</script>
+</body>
+</html>
