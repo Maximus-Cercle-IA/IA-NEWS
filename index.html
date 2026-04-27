@@ -452,10 +452,10 @@ async function launch(){
   const prompt=`Veille IA Cercle IA — ${today}
 Sources: ${active.map(s=>`${s.name}(${s.cat})`).join(', ')}
 
-Génère 10-12 actualités IA réalistes de cette semaine pour des professionnels (avocats, RH, médecins, consultants, dirigeants PME).
+Génère 10 actualités IA réalistes de cette semaine pour des professionnels (avocats, RH, médecins, consultants, dirigeants PME).
 
-Retourne UNIQUEMENT ce tableau JSON (commence par [, aucun texte avant ni après):
-[{"id":"n1","title":"...","source":"nom source","url":"url","date":"JJ/MM/AAAA","category":"IA Générale & Big Tech|Métiers & Professions|Réglementation & Éthique|Éducation & Formation|Outils & Usages Pratiques|Société & Emploi","summary":"2-3 phrases décodant pour un pro","full_text":"100 mots max","score":40-98,"scores":{"metier":0-40,"impact":0-25,"source":0-15,"fraicheur":0-10,"viral":0-10},"angles":[{"name":"nom","description":"angle LinkedIn concret","type":"Visibilité"},{"name":"nom","description":"...","type":"Crédibilité"},{"name":"nom","description":"...","type":"Visibilité"}]}]
+IMPORTANT: Retourne UNIQUEMENT un tableau JSON minifié sur UNE SEULE LIGNE (zéro retour à la ligne dans le JSON, zéro texte avant ou après, commence immédiatement par [).
+Format exact de chaque objet: {"id":"n1","title":"titre court","source":"source","url":"https://...","date":"JJ/MM/AAAA","category":"IA Générale & Big Tech|Métiers & Professions|Réglementation & Éthique|Éducation & Formation|Outils & Usages Pratiques|Société & Emploi","summary":"1-2 phrases max 60 mots","full_text":"3-4 phrases max 60 mots","score":40-98,"scores":{"metier":0-40,"impact":0-25,"source":0-15,"fraicheur":0-10,"viral":0-10},"angles":[{"name":"nom court","description":"1 phrase 15 mots max","type":"Visibilité"},{"name":"nom","description":"1 phrase 15 mots max","type":"Crédibilité"},{"name":"nom","description":"1 phrase 15 mots max","type":"Visibilité"}]}
 
 Règles score: metier 35-40=direct, 20-34=redirigeable; impact 22-25=changement concret; source 13-15=institution majeure; fraicheur 9-10=<3j; viral 9-10=chiffre choc. score=somme. Max 5/catégorie. Ordre décroissant. Score<40 exclus.`;
 
@@ -463,7 +463,11 @@ Règles score: metier 35-40=direct, 20-34=redirigeable; impact 22-25=changement 
     const resp=await fetch(PROXY,{
       method:'POST',
       headers:{'Content-Type':'application/json'},
+<<<<<<< HEAD
       body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:6000,messages:[{role:'user',content:prompt}]})
+=======
+      body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:8192,messages:[{role:'user',content:prompt}]})
+>>>>>>> claude/fix-html-deployment-Prp6R
     });
     if(!resp.ok){
       const errText=await resp.text();
@@ -474,7 +478,20 @@ Règles score: metier 35-40=direct, 20-34=redirigeable; impact 22-25=changement 
     setP(88);document.getElementById('lmsg').textContent='Sauvegarde…';cur=active.length+1;renderSteps();
     const s=raw.indexOf('['),e=raw.lastIndexOf(']');
     if(s===-1||e===-1||e<=s)throw new Error('Réponse JSON invalide');
-    const parsed=JSON.parse(raw.slice(s,e+1));
+    let jsonStr=raw.slice(s,e+1);
+    // sanitize control characters that break JSON parsing
+    jsonStr=jsonStr.replace(/[\x00-\x08\x0b\x0c\x0e-\x1f]/g,'');
+    let parsed;
+    try{parsed=JSON.parse(jsonStr);}catch(je){
+      // attempt recovery: extract all complete objects from the array
+      const objs=[];let depth=0,start=-1;
+      for(let i=0;i<jsonStr.length;i++){
+        if(jsonStr[i]==='{'){if(depth===0)start=i;depth++;}
+        else if(jsonStr[i]==='}'){depth--;if(depth===0&&start!==-1){try{objs.push(JSON.parse(jsonStr.slice(start,i+1)));start=-1;}catch{}}}
+      }
+      if(!objs.length)throw new Error('Réponse Claude illisible — relancez la veille');
+      parsed=objs;
+    }
     news=parsed.filter(n=>n.score>=40).sort((a,b)=>b.score-a.score);
     await saveAllNews(news);
     setP(100);cur=steps.length;renderSteps();
