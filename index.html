@@ -255,8 +255,9 @@ const CATBYKEY=Object.fromEntries(Object.entries(CATS).map(([n,v])=>[v.k,n]));
 let sources=[],news=[],favs=new Set(),tab='all',scoreMin=60,xp={};
 
 async function sb(path,opts={}){
-  const h={'apikey':SK,'Authorization':'Bearer '+SK,'Content-Type':'application/json','Prefer':'return=representation',...(opts.headers||{})};
-  const r=await fetch(SB+'/rest/v1/'+path,{headers:h,...opts});
+  const {headers:xh,...restOpts}=opts;
+  const h={'apikey':SK,'Authorization':'Bearer '+SK,'Content-Type':'application/json','Prefer':'return=representation',...(xh||{})};
+  const r=await fetch(SB+'/rest/v1/'+path,{headers:h,...restOpts});
   if(!r.ok)throw new Error(await r.text());
   const t=await r.text();return t?JSON.parse(t):[];
 }
