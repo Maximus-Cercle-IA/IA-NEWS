@@ -228,7 +228,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;heigh
 <script>
 const SB='https://yybmytkaxnditlmhspft.supabase.co';
 const SK='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl5Ym15dGtheG5kaXRsbWhzcGZ0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzcyNzA2NTAsImV4cCI6MjA5Mjg0NjY1MH0.ImN0nekJKPAX35Yrlm-cFCIBtGfaTUyl5C4mP9TNVUo';
-const PROXY='https://yybmytkaxnditlmhspft.supabase.co/functions/v1/claude-proxy';
+const PROXY='/api/claude';
 
 function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 
@@ -462,7 +462,7 @@ Règles score: metier 35-40=direct, 20-34=redirigeable; impact 22-25=changement 
   try{
     const resp=await fetch(PROXY,{
       method:'POST',
-      headers:{'Content-Type':'application/json','Authorization':'Bearer '+SK},
+      headers:{'Content-Type':'application/json'},
       body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:6000,messages:[{role:'user',content:prompt}]})
     });
     if(!resp.ok){
