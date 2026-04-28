@@ -40,12 +40,40 @@ function txt(block, tag) {
 }
 
 function getLink(block) {
-  // RSS 2.0
   const rss = block.match(/<link>([^<]+)<\/link>/i);
   if (rss && rss[1].startsWith('http')) return rss[1].trim();
-  // Atom
   const atom = block.match(/<link\b[^>]+href="([^"]+)"(?![^>]*rel="self")[^>]*>/i);
   if (atom) return atom[1];
+  return '';
+}
+
+function getImage(b) {
+  let m;
+  m = b.match(/<enclosure\b[^>]+type="image[^"]*"[^>]+url="([^"]+)"/i) ||
+      b.match(/<enclosure\b[^>]+url="([^"]+)"[^>]+type="image/i);
+  if (m) return m[1];
+  m = b.match(/<media:thumbnail\b[^>]+url="([^"]+)"/i) ||
+      b.match(/<media:content\b[^>]+url="([^"]+)"[^>]*medium="image"/i) ||
+      b.match(/<media:content\b[^>]*medium="image"[^>]+url="([^"]+)"/i);
+  if (m) return m[1];
+  m = b.match(/<itunes:image\b[^>]+href="([^"]+)"/i);
+  if (m) return m[1];
+  // extract first <img src> from description CDATA
+  const desc = b.match(/<description[^>]*>(?:<!\[CDATA\[)?([\s\S]*?)(?:\]\]>)?<\/description>/i);
+  if (desc) {
+    const im = desc[1].match(/<img\b[^>]+src="([^"]+)"/i);
+    if (im && im[1].startsWith('http')) return im[1];
+  }
+  return null;
+}
+
+function getExcerpt(b) {
+  for (const tag of ['description', 'summary', 'content:encoded', 'content']) {
+    const m = b.match(new RegExp(`<${tag}[^>]*>(?:<!\\[CDATA\\[)?([\\s\\S]*?)(?:\\]\\]>)?<\\/${tag}>`, 'i'));
+    if (!m) continue;
+    const t = m[1].replace(/<[^>]+>/g, ' ').replace(/&[a-z#0-9]+;/gi, ' ').replace(/\s+/g, ' ').trim();
+    if (t.length > 30) return t.slice(0, 200) + (t.length > 200 ? '…' : '');
+  }
   return '';
 }
 
@@ -66,7 +94,7 @@ function parseFeed(xml) {
     const ds = txt(b, 'pubDate') || txt(b, 'published') || txt(b, 'updated') || txt(b, 'dc:date');
     const d = ds ? new Date(ds) : new Date();
     if (!isNaN(d.getTime()) && d.getTime() >= cutoff) {
-      items.push({ title, url, date: fmtDate(d) });
+      items.push({ title, url, date: fmtDate(d), image: getImage(b), excerpt: getExcerpt(b) });
     }
   }
   return items;
@@ -96,7 +124,6 @@ async function fetchFeedForSource(srcUrl) {
     origin + '/feed.xml',
   ];
 
-  // Try all candidates in parallel — return first valid feed
   try {
     return await Promise.any(
       candidates.map(url =>
@@ -109,7 +136,6 @@ async function fetchFeedForSource(srcUrl) {
       )
     );
   } catch {
-    // Fallback: fetch source HTML, look for <link rel="alternate"> RSS tag
     try {
       const html = await get(srcUrl, 6000);
       const rssUrl = findRSSInHTML(html, srcUrl);
@@ -155,6 +181,8 @@ module.exports = async function handler(req, res) {
           url: item.url,
           date: item.date,
           category: cat,
+          image: item.image || null,
+          excerpt: item.excerpt || '',
         }));
       } catch { return []; }
     })

@@ -173,25 +173,10 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;heigh
 #toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 .lc-ia{background:#252860}.lc-me{background:#152e20}.lc-re{background:#2e1515}.lc-ed{background:#152030}.lc-ou{background:#2e2010}.lc-so{background:#22152e}
 .dc-ia{background:#8898f0}.dc-me{background:#5dc488}.dc-re{background:#e08080}.dc-ed{background:#60b8e8}.dc-ou{background:#c8a040}.dc-so{background:#b880f0}
-.scan-hdr{margin-bottom:20px}
-.scan-title{font-family:var(--fd);font-size:22px;font-weight:400;margin-bottom:6px}
-.scan-sub{font-size:12px;color:var(--mu);line-height:1.5}
-.scan-actions{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;gap:10px}
-.btn-selall{background:transparent;border:1px solid var(--bdr2);color:var(--mu);padding:7px 12px;border-radius:4px;font-size:11px;font-family:var(--fb);cursor:pointer;transition:all .15s}
-.btn-selall:hover{border-color:var(--cr2);color:var(--cr2)}
-.btn-develop{display:flex;align-items:center;gap:7px;background:var(--or);color:#fff;border:none;padding:0 18px;height:36px;border-radius:4px;font-family:var(--fb);font-size:13px;font-weight:500;cursor:pointer;transition:background .2s,box-shadow .2s}
-.btn-develop:hover{background:var(--or2);box-shadow:0 4px 18px var(--or-glow)}
-.btn-develop:disabled{background:var(--mu2);cursor:not-allowed;box-shadow:none}
-.scan-list{display:flex;flex-direction:column;gap:8px}
-.scan-item{display:flex;align-items:center;gap:12px;background:var(--surf);border:1px solid var(--bdr);border-radius:6px;padding:12px 14px;cursor:pointer;transition:border-color .15s}
-.scan-item:hover{border-color:var(--bdr2)}
-.scan-item input[type=checkbox]{width:16px;height:16px;accent-color:var(--or);cursor:pointer;flex-shrink:0}
-.scan-item-body{flex:1;min-width:0}
-.scan-meta{display:flex;align-items:center;gap:7px;margin-bottom:5px;flex-wrap:wrap}
-.scan-cat-tag{font-size:10px;background:var(--surf2);border:1px solid var(--bdr2);color:var(--mu);padding:2px 7px;border-radius:10px}
-.scan-ititle{font-size:13px;font-weight:500;color:var(--cr);line-height:1.4}
-.scan-link{display:flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:4px;border:1px solid var(--bdr);color:var(--mu);flex-shrink:0;transition:all .15s;text-decoration:none}
-.scan-link:hover{border-color:var(--or);color:var(--or);background:var(--or-dim)}
+.cimg-wrap{overflow:hidden;height:160px;border-bottom:1px solid var(--bdr);background:var(--surf2)}
+.cimg{width:100%;height:160px;object-fit:cover;display:block;transition:transform .4s ease}
+.card:hover .cimg{transform:scale(1.03)}
+.cexcerpt{font-size:11.5px;color:var(--mu);line-height:1.55;padding:9px 14px 0;border-top:1px solid var(--bdr);margin-top:2px}
 </style>
 </head>
 <body>
@@ -378,7 +363,10 @@ function cardH(n){
   const fv=favs.has(n.id),e=xp[n.id]||{};
   const angs=n.angles?(typeof n.angles==='string'?JSON.parse(n.angles):n.angles):[];
   const cm=CATS[n.category]||{lc:'lc-ia'};
+  const imgH=n.image?`<div class="cimg-wrap"><img class="cimg" src="${esc(n.image)}" alt="" loading="lazy" onerror="this.closest('.cimg-wrap').style.display='none'"></div>`:'';
+  const excH=n.excerpt&&n.excerpt.length>20?`<div class="cexcerpt">${esc(n.excerpt)}</div>`:'';
   return `<div class="card${fv?' fav':''}" id="cd_${n.id}">
+    ${imgH}
     <div class="ch">
       <div class="ch-l">
         <div class="csrc-row"><span class="csrc">${esc(n.source)}</span><span class="cdot-s">·</span><span class="cdate">${esc(n.date)}</span></div>
@@ -390,7 +378,7 @@ function cardH(n){
         <div class="sc ${scCls(n.score)}">${n.score}</div>
       </div>
     </div>
-    <div class="cbody"><div class="csum-wrap"><div class="csum">${esc(n.summary)}</div><button class="cp-inline" onclick="cpArt('${n.id}')" title="Copier l'article"><svg viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg></button></div></div>
+    <div class="cbody">${excH}<div class="csum-wrap" style="margin-top:${n.excerpt?'8px':'0'}"><div class="csum">${esc(n.summary)}</div><button class="cp-inline" onclick="cpArt('${n.id}')" title="Copier l'article"><svg viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg></button></div></div>
     <div class="cbdgs">${gbdg(n.score)}${etiq(n)}</div>
     <div class="cact">
       <button class="ab${e.a?' on':''}" onclick="togX('${n.id}','a')">
@@ -485,141 +473,87 @@ async function delAllFavs(){const ids=[...favs].join(',');if(!ids)return;await s
 function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2200);}
 function setP(p){document.getElementById('lf').style.width=p+'%';document.getElementById('lpct').textContent=Math.round(p)+'%';}
 
+function scoreIA(title,excerpt){
+  const t=((title||'')+' '+(excerpt||'')).toLowerCase();
+  const HIGH=['intelligence artificielle','ia générative','generative ai','large language','llm','chatgpt','gpt-4','gpt-5','gpt 4','gpt 5','claude ai','claude 3','claude 4','gemini','copilot','deep learning','machine learning','apprentissage automatique','modèle de langage','réseau neuronal','nlp','openai','anthropic','mistral','midjourney','stable diffusion','ai agent','agent ia','prompt engineering'];
+  const MED=[' ia ',' ai ','artificiel','algorithme','automatisation','automatisé','données massives','big data','prédictif','robotique','vision par ordinateur','reconnaissance vocale'];
+  let s=0;
+  for(const k of HIGH)if(t.includes(k))s+=3;
+  for(const k of MED)if(t.includes(k))s+=1;
+  return s;
+}
+
+async function devArticle(art){
+  const prompt=`Tu es un assistant de veille pour Cercle IA — formation IA pour professionnels non-techniques (avocats, RH, médecins, consultants, dirigeants PME).
+
+Article :
+Titre : ${art.title}
+Source : ${art.source} | Date : ${art.date} | Catégorie : ${art.category}${art.excerpt?`
+Extrait : ${art.excerpt.slice(0,200)}`:''}
+
+Retourne UNIQUEMENT ce JSON minifié sur une seule ligne (commence par {) :
+{"summary":"analyse 2-3 phrases 60 mots max en français pour un non-technicien","full_text":"analyse complète 80-100 mots en français","score":0-100,"scores":{"metier":0-40,"impact":0-25,"source":0-15,"fraicheur":0-10,"viral":0-10},"angles":[{"name":"nom court","description":"1 phrase 15 mots max","type":"Visibilité"},{"name":"nom court","description":"1 phrase 15 mots max","type":"Crédibilité"},{"name":"nom court","description":"1 phrase 15 mots max","type":"Visibilité"}]}
+Règles : metier 35-40=impact direct sur ce professionnel; 20-34=angle possible; impact 22-25=changement concret; source 13-15=institution reconnue; fraicheur 9-10=<3j; viral 9-10=stat choc. score=somme. Si non lié à l'IA→score≤25.`;
+  try{
+    const resp=await fetch(PROXY,{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({mode:'develop',model:'claude-sonnet-4-6',max_tokens:700,messages:[{role:'user',content:prompt}]})});
+    if(!resp.ok)return null;
+    const data=await resp.json();
+    if(data.error)return null;
+    const raw=(data.content||[]).filter(b=>b.type==='text').map(b=>b.text).join('');
+    const s=raw.indexOf('{'),e=raw.lastIndexOf('}');
+    if(s===-1||e===-1)return null;
+    return JSON.parse(raw.slice(s,e+1).replace(/[ --]/g,''));
+  }catch{return null;}
+}
+
 async function launch(){
   const active=sources.filter(s=>s.is_on);
   if(!active.length)return toast('Activez au moins une source');
   const btn=document.getElementById('gob');
-  btn.disabled=true;btn.innerHTML='<div class="spin"></div> Scan…';
+  btn.disabled=true;btn.innerHTML='<div class="spin"></div> Veille…';
   const lov=document.getElementById('lov');lov.classList.add('show');
   document.getElementById('lsteps').innerHTML='';
-  setP(15);
-  document.getElementById('lmsg').textContent='Lecture des flux RSS…';
+  setP(5);document.getElementById('lmsg').textContent='Lecture des flux RSS…';
   try{
-    const resp=await fetch('/api/rss',{
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({sources:active})
-    });
-    if(!resp.ok){const e=await resp.json().catch(()=>({}));throw new Error(e.error||'RSS HTTP '+resp.status);}
-    const articles=await resp.json();
+    const rssResp=await fetch('/api/rss',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({sources:active})});
+    if(!rssResp.ok){const e=await rssResp.json().catch(()=>({}));throw new Error(e.error||'RSS HTTP '+rssResp.status);}
+    const all=await rssResp.json();
+    if(!all.length)throw new Error('Aucun article trouvé dans les flux RSS — vérifiez que vos sources sont actives');
+    setP(20);document.getElementById('lmsg').textContent='Tri pertinence IA…';
+    const scored=all.map(a=>({...a,_ias:scoreIA(a.title,a.excerpt)}));
+    const relevant=scored.filter(a=>a._ias>0).sort((a,b)=>b._ias-a._ias);
+    const todev=relevant.length?relevant:scored;
+    document.getElementById('lsteps').innerHTML=todev.slice(0,4).map(a=>`<div class="lstep done"><div class="ldot"></div>${esc(a.source)} — ${esc(a.title.slice(0,32))}…</div>`).join('')+(todev.length>4?`<div class="lstep"><div class="ldot"></div>+${todev.length-4} autres</div>`:'');
+    await new Promise(r=>setTimeout(r,400));
+    const developed=[];
+    for(let i=0;i<todev.length;i++){
+      const art=todev[i];
+      setP(25+Math.round((i/todev.length)*68));
+      document.getElementById('lmsg').textContent=`Analyse ${i+1}/${todev.length}…`;
+      document.getElementById('lsteps').innerHTML=`<div class="lstep cur"><div class="ldot"></div>${esc(art.source)} — ${esc(art.title.slice(0,38))}…</div>`;
+      const analysis=await devArticle(art);
+      developed.push({...art,...(analysis||{summary:'Analyse indisponible',full_text:'',score:50,scores:null,angles:[]})});
+    }
+    setP(95);document.getElementById('lmsg').textContent='Sauvegarde…';document.getElementById('lsteps').innerHTML='';
+    news=developed.filter(n=>n.score>=40).sort((a,b)=>b.score-a.score);
+    scanResults=[];
+    try{await saveAllNews(news);}catch(e){console.warn('Save:',e);}
     setP(100);
-    lov.classList.remove('show');
-    if(!articles.length){toast('Aucun article récent trouvé — vérifiez vos sources');return;}
-    scanResults=articles;
-    showScanUI();
-    toast(`${articles.length} articles trouvés dans les flux RSS`);
+    await new Promise(r=>setTimeout(r,300));
+    lov.classList.remove('show');render();
+    toast(`${news.length} articles analysés ✓`);
   }catch(err){
     lov.classList.remove('show');
-    console.error('Erreur RSS:',err);
-    toast('Erreur scan : '+(err.message.length>90?err.message.slice(0,90)+'…':err.message));
+    console.error('Erreur veille:',err);
+    const msg=err.message||'';
+    if(/429|rate.?limit/i.test(msg))toast('Limite Anthropic — attendez 1 min et relancez');
+    else if(/401|403|api.key/i.test(msg))toast('Clé API invalide — vérifiez ANTHROPIC_API_KEY dans Vercel');
+    else toast('Erreur : '+(msg.length>90?msg.slice(0,90)+'…':msg));
   }finally{
     btn.disabled=false;
     btn.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8" fill="currentColor" stroke="none"/></svg> Lancer la veille';
   }
-}
-
-function showScanUI(){
-  document.getElementById('empt').style.display='none';
-  const rs=document.getElementById('res');
-  rs.style.display='block';
-  rs.innerHTML=`
-    <div class="scan-hdr">
-      <div class="scan-title">${scanResults.length} articles trouvés</div>
-      <div class="scan-sub">Sélectionnez les articles à analyser, puis cliquez sur Développer.</div>
-    </div>
-    <div class="scan-actions">
-      <button class="btn-selall" onclick="toggleAll()">Tout sélectionner / désélectionner</button>
-      <button class="btn-develop" id="devBtn" onclick="develop()">
-        <svg viewBox="0 0 24 24" width="13" height="13"><path d="M13 10V3L4 14h7v7l9-11h-7z" fill="currentColor"/></svg>
-        Développer <span id="selCnt">${scanResults.length}</span> articles
-      </button>
-    </div>
-    <div class="scan-list">
-      ${scanResults.map(a=>`
-        <label class="scan-item">
-          <input type="checkbox" class="scan-cb" data-id="${esc(a.id)}" checked onchange="updateSelCount()">
-          <div class="scan-item-body">
-            <div class="scan-meta"><span class="csrc">${esc(a.source)}</span><span class="cdot-s">·</span><span class="cdate">${esc(a.date)}</span><span class="scan-cat-tag">${esc(a.category)}</span></div>
-            <div class="scan-ititle">${esc(a.title)}</div>
-          </div>
-          <a class="scan-link" href="${esc(a.url)}" target="_blank" rel="noopener noreferrer" title="Voir l'article" onclick="event.stopPropagation()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3"/></svg></a>
-        </label>
-      `).join('')}
-    </div>`;
-}
-
-function updateSelCount(){
-  const cnt=document.querySelectorAll('.scan-cb:checked').length;
-  const el=document.getElementById('selCnt');
-  if(el)el.textContent=cnt;
-}
-
-function toggleAll(){
-  const cbs=[...document.querySelectorAll('.scan-cb')];
-  const allChecked=cbs.every(cb=>cb.checked);
-  cbs.forEach(cb=>cb.checked=!allChecked);
-  updateSelCount();
-}
-
-async function develop(){
-  const selected=[...document.querySelectorAll('.scan-cb:checked')].map(cb=>cb.dataset.id);
-  if(!selected.length)return toast('Sélectionnez au moins un article');
-  const todev=scanResults.filter(a=>selected.includes(a.id));
-  const btn=document.getElementById('gob');
-  btn.disabled=true;
-  const devBtn=document.getElementById('devBtn');
-  if(devBtn)devBtn.disabled=true;
-  const lov=document.getElementById('lov');
-  lov.classList.add('show');
-  setP(0);
-  const developed=[];
-  for(let i=0;i<todev.length;i++){
-    const art=todev[i];
-    setP(Math.round((i/todev.length)*88));
-    document.getElementById('lmsg').textContent=`Analyse ${i+1}/${todev.length}…`;
-    document.getElementById('lsteps').innerHTML=`<div class="lstep cur"><div class="ldot"></div>${esc(art.source)} — ${esc(art.title.slice(0,40))}…</div>`;
-    const devPrompt=`Analyse cet article IA pour des professionnels francophones non-techniques (avocats, RH, médecins, consultants, dirigeants).
-
-Titre : ${art.title}
-Source : ${art.source} | Date : ${art.date} | Catégorie : ${art.category}
-
-Retourne UNIQUEMENT ce JSON minifié sur une seule ligne (commence par {, aucun texte avant ou après) :
-{"summary":"résumé 1-2 phrases 50 mots max en français","full_text":"analyse 3-4 phrases 80 mots en français","score":40-98,"scores":{"metier":0-40,"impact":0-25,"source":0-15,"fraicheur":0-10,"viral":0-10},"angles":[{"name":"nom court","description":"1 phrase 15 mots max","type":"Visibilité"},{"name":"nom court","description":"1 phrase 15 mots max","type":"Crédibilité"},{"name":"nom court","description":"1 phrase 15 mots max","type":"Visibilité"}]}
-Règles score : metier 35-40=direct, 20-34=redirigeable; impact 22-25=changement concret; source 13-15=institution majeure; fraicheur 9-10=<3j; viral 9-10=chiffre choc. score=somme.`;
-    try{
-      const resp=await fetch(PROXY,{
-        method:'POST',
-        headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({mode:'develop',model:'claude-sonnet-4-6',max_tokens:600,messages:[{role:'user',content:devPrompt}]})
-      });
-      if(!resp.ok){console.warn(`Develop HTTP ${resp.status} for ${art.id}`);developed.push({...art,summary:'Analyse indisponible',full_text:'',score:50,scores:null,angles:[]});continue;}
-      const data=await resp.json();
-      if(data.error){console.warn('API error for '+art.id,data.error);developed.push({...art,summary:'Analyse indisponible',full_text:'',score:50,scores:null,angles:[]});continue;}
-      const raw=(data.content||[]).filter(b=>b.type==='text').map(b=>b.text).join('');
-      const s=raw.indexOf('{'),e=raw.lastIndexOf('}');
-      if(s===-1||e===-1){developed.push({...art,summary:'Analyse indisponible',full_text:'',score:50,scores:null,angles:[]});continue;}
-      let analysis;
-      try{analysis=JSON.parse(raw.slice(s,e+1).replace(/[\x00-\x08\x0b\x0c\x0e-\x1f]/g,''));}
-      catch{analysis={summary:'Analyse indisponible',full_text:'',score:50,scores:null,angles:[]};}
-      developed.push({...art,...analysis});
-    }catch(err){
-      console.warn('Develop error for '+art.id,err);
-      developed.push({...art,summary:'Analyse indisponible',full_text:'',score:50,scores:null,angles:[]});
-    }
-  }
-  setP(95);
-  document.getElementById('lmsg').textContent='Sauvegarde…';
-  document.getElementById('lsteps').innerHTML='';
-  news=developed.filter(n=>n.score>=40).sort((a,b)=>b.score-a.score);
-  scanResults=[];
-  try{await saveAllNews(news);}catch(err){console.warn('Save error:',err);}
-  setP(100);
-  await new Promise(r=>setTimeout(r,300));
-  lov.classList.remove('show');
-  render();
-  toast(`${news.length} articles analysés ✓`);
-  btn.disabled=false;
-  btn.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8" fill="currentColor" stroke="none"/></svg> Lancer la veille';
 }
 
 async function init(){
