@@ -6,8 +6,8 @@ module.exports = async function handler(req, res) {
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
-  const apiKey = process.env.ANTHROPIC_API_KEY;
-  if (!apiKey) return res.status(500).json({ error: 'ANTHROPIC_API_KEY manquante dans les variables Vercel' });
+  const apiKey = process.env.ANTHROPIC_API_KEY || process.env['Claude-Key'];
+  if (!apiKey) return res.status(500).json({ error: 'Clé API manquante — ajoutez ANTHROPIC_API_KEY ou Claude-Key dans les variables Vercel' });
 
   try {
     const r = await fetch('https://api.anthropic.com/v1/messages', {
