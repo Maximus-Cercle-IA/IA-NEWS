@@ -12,7 +12,6 @@ module.exports = async function handler(req, res) {
   try {
     const tools = [
       { type: 'web_search_20260209', name: 'web_search' },
-      { type: 'web_fetch_20260209', name: 'web_fetch' },
     ];
     const r = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',

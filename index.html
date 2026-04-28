@@ -472,22 +472,17 @@ async function launch(){
   const btn=document.getElementById('gob');
   btn.disabled=true;btn.innerHTML='<div class="spin"></div> Analyse…';
   const lov=document.getElementById('lov');lov.classList.add('show');
-  const steps=[...active.map(s=>`Lecture : ${s.name}`),'Scoring & filtrage','Sauvegarde'];
+  const steps=['Recherche web IA','Analyse & scoring','Sauvegarde'];
   let cur=0;
   const renderSteps=()=>{document.getElementById('lsteps').innerHTML=steps.map((s,i)=>`<div class="lstep${i<cur?' done':i===cur?' cur':''}"><div class="ldot"></div>${s}${i<cur?' ✓':''}</div>`).join('');};
-  renderSteps();setP(2);
-  for(let i=0;i<active.length;i++){
-    document.getElementById('lmsg').textContent=`Lecture de ${active[i].name}…`;
-    setP(5+Math.round((i/active.length)*55));cur=i;renderSteps();
-    await new Promise(r=>setTimeout(r,200));cur=i+1;renderSteps();
-  }
-  document.getElementById('lmsg').textContent='Scoring…';setP(65);cur=active.length;renderSteps();
+  renderSteps();setP(5);
+  document.getElementById('lmsg').textContent='Lancement de la recherche…';
   const today=new Date().toLocaleDateString('fr-FR',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
   const prompt=`Veille IA Cercle IA — ${today}
 
 Tu es un assistant de veille IA pour des professionnels francophones non-techniques (avocats, RH, médecins, consultants, dirigeants PME).
 
-MISSION : Utilise web_search pour trouver 10 vrais articles IA publiés cette semaine (7 derniers jours maximum). Cherche sur ces sources en priorité :
+MISSION : Utilise web_search pour trouver 7 vrais articles IA publiés cette semaine (7 derniers jours maximum). Limite-toi à 3-4 recherches maximum. Cherche sur ces sources en priorité :
 ${active.map(s=>`- ${s.name} (${s.cat})`).join('\n')}
 
 RÈGLES ABSOLUES :
@@ -501,11 +496,18 @@ Format exact: {"id":"n1","title":"titre court","source":"nom du média","url":"h
 
 Règles score: metier 35-40=direct, 20-34=redirigeable; impact 22-25=changement concret; source 13-15=institution majeure; fraicheur 9-10=<3j; viral 9-10=chiffre choc. score=somme. Max 5/catégorie. Ordre décroissant. Score<40 exclus.`;
 
+  let loadSecs=0;
+  const lTick=setInterval(()=>{
+    loadSecs++;
+    setP(Math.min(88,5+Math.round((loadSecs/180)*83)));
+    const m=Math.floor(loadSecs/60),s=loadSecs%60;
+    document.getElementById('lmsg').textContent=`Recherche web… ${m>0?m+'min ':''}${s}s`;
+  },1000);
   try{
     const resp=await fetch(PROXY,{
       method:'POST',
       headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:8000,messages:[{role:'user',content:prompt}]})
+      body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:5000,messages:[{role:'user',content:prompt}]})
     });
     if(!resp.ok){
       const errText=await resp.text();
@@ -520,7 +522,7 @@ Règles score: metier 35-40=direct, 20-34=redirigeable; impact 22-25=changement 
     }
     const raw=data.content.filter(b=>b.type==='text').map(b=>b.text).join('');
     console.log('Réponse brute Claude:',raw.slice(0,300));
-    setP(88);document.getElementById('lmsg').textContent='Sauvegarde…';cur=active.length+1;renderSteps();
+    cur=1;renderSteps();setP(90);document.getElementById('lmsg').textContent='Sauvegarde…';cur=2;renderSteps();
     const s=raw.search(/\[\s*\{/),e=raw.lastIndexOf(']');
     if(s===-1||e===-1||e<=s)throw new Error('Réponse JSON invalide — vérifiez la console (F12)');
     let jsonStr=raw.slice(s,e+1);
@@ -554,6 +556,7 @@ Règles score: metier 35-40=direct, 20-34=redirigeable; impact 22-25=changement 
     else if(/JSON invalide/i.test(msg))toast('Réponse JSON invalide — ouvrez F12 console pour voir la réponse brute de Claude');
     else toast('Erreur Claude : '+(msg.length>80?msg.slice(0,80)+'…':msg));
   }finally{
+    clearInterval(lTick);
     btn.disabled=false;
     btn.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8" fill="currentColor" stroke="none"/></svg> Lancer la veille';
   }
