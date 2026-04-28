@@ -101,9 +101,9 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;heigh
 .cdot-s{color:var(--bdr2)}
 .ctitle{font-size:14px;font-weight:500;color:var(--cr);line-height:1.4}
 .ch-r{display:flex;flex-direction:column;align-items:flex-end;gap:7px;flex-shrink:0}
-.fv-btn{background:transparent;border:none;cursor:pointer;font-size:16px;opacity:.55;transition:opacity .2s,transform .15s;padding:2px}
-.fv-btn:hover{opacity:.9;transform:scale(1.15)}
-.fv-btn.on{opacity:1}
+.fv-btn{background:transparent;border:none;cursor:pointer;font-size:16px;color:#c8a040;opacity:.6;transition:opacity .2s,transform .15s;padding:2px}
+.fv-btn:hover{opacity:1;transform:scale(1.15)}
+.fv-btn.on{opacity:1;color:#f0c040}
 .sc{width:38px;height:38px;border-radius:50%;display:grid;place-items:center;font-size:12px;font-weight:500;border:1.5px solid;flex-shrink:0}
 .sc-a{background:var(--gn-bg);border-color:var(--gn);color:#5dc488}
 .sc-b{background:var(--yw-bg);border-color:var(--or);color:var(--or)}
@@ -257,6 +257,7 @@ const SB='https://yybmytkaxnditlmhspft.supabase.co';
 const SK='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl5Ym15dGtheG5kaXRsbWhzcGZ0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzcyNzA2NTAsImV4cCI6MjA5Mjg0NjY1MH0.ImN0nekJKPAX35Yrlm-cFCIBtGfaTUyl5C4mP9TNVUo';
 const PROXY='/api/claude';
 const LS_SOURCES='cia_sources';
+const LS_FAVARTS='cia_fav_arts';
 const DEFAULT_SOURCES=[
   {id:'s1',name:'The Verge AI',url:'https://www.theverge.com/ai-artificial-intelligence',rss_url:'https://www.theverge.com/rss/ai-artificial-intelligence/index.xml',cat:'IA Générale',is_on:true,position:1},
   {id:'s2',name:'MIT Tech Review',url:'https://www.technologyreview.com/',rss_url:'https://www.technologyreview.com/feed/',cat:'IA Générale',is_on:true,position:2},
@@ -271,6 +272,8 @@ const DEFAULT_SOURCES=[
   {id:'s11',name:'FutureTools',url:'https://futuretools.io/news',rss_url:'https://futuretools.io/feed',cat:'Outils',is_on:true,position:11},
 ];
 function saveSourcesToLS(){try{localStorage.setItem(LS_SOURCES,JSON.stringify(sources));}catch{}}
+function loadFavArts(){try{const ls=localStorage.getItem(LS_FAVARTS);if(ls)favArts=JSON.parse(ls)||{};}catch{}}
+function saveFavArts(){try{localStorage.setItem(LS_FAVARTS,JSON.stringify(favArts));}catch{}}
 
 function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 
@@ -284,7 +287,7 @@ const CATS={
 };
 const CATBYKEY=Object.fromEntries(Object.entries(CATS).map(([n,v])=>[v.k,n]));
 
-let sources=[],news=[],favs=new Set(),tab='all',scoreMin=60,xp={},scanResults=[];
+let sources=[],news=[],favs=new Set(),favArts={},tab='all',scoreMin=60,xp={},scanResults=[];
 
 async function sb(path,opts={}){
   const {headers:xh,...restOpts}=opts;
@@ -437,7 +440,7 @@ function cardH(n){
 function updCounts(){
   const f=news.filter(n=>n.score>=scoreMin);
   document.getElementById('cntAll').textContent=f.length;
-  document.getElementById('cntFav').textContent=[...favs].filter(id=>f.find(n=>n.id===id)).length;
+  document.getElementById('cntFav').textContent=Object.keys(favArts).filter(id=>favs.has(id)).length;
   document.getElementById('stotal').textContent=news.length;
   document.getElementById('sfavs').textContent=favs.size;
   Object.entries(CATS).forEach(([cat,{k}])=>{
@@ -449,11 +452,16 @@ function updCounts(){
 function render(){
   updCounts();
   const em=document.getElementById('empt'),rs=document.getElementById('res');
-  if(!news.length){em.style.display='flex';rs.style.display='none';return;}
+  const hasFavs=Object.values(favArts).some(a=>favs.has(a.id));
+  if(!news.length&&!(tab==='favs'&&hasFavs)){em.style.display='flex';rs.style.display='none';return;}
   em.style.display='none';rs.style.display='block';
-  let items=news.filter(n=>n.score>=scoreMin);
-  if(tab==='favs')items=items.filter(n=>favs.has(n.id));
-  else if(tab!=='all'){const cat=CATBYKEY[tab];if(cat)items=items.filter(n=>n.category===cat);}
+  let items;
+  if(tab==='favs'){
+    items=Object.values(favArts).filter(a=>favs.has(a.id)).sort((a,b)=>(b.score||0)-(a.score||0));
+  } else {
+    items=news.filter(n=>n.score>=scoreMin);
+    if(tab!=='all'){const cat=CATBYKEY[tab];if(cat)items=items.filter(n=>n.category===cat);}
+  }
   if(!items.length){rs.innerHTML='<div class="empty" style="min-height:40vh"><div class="ehex" style="width:56px;height:56px"><svg viewBox="0 0 24 24" style="width:22px;height:22px"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg></div><h2 style="font-size:18px">Aucune news ici</h2><p>Ajustez le score ou lancez une nouvelle veille.</p></div>';return;}
   const byCat={};
   items.forEach(n=>{if(!byCat[n.category])byCat[n.category]=[];if(byCat[n.category].length<5)byCat[n.category].push(n);});
@@ -475,23 +483,27 @@ function togX(id,type){
   const was=xp[id][type];
   xp[id]={};
   if(!was)xp[id][type]=true;
-  const c=document.getElementById(`cd_${id}`);const n=news.find(x=>x.id===id);
+  const c=document.getElementById(`cd_${id}`);const n=news.find(x=>x.id===id)||favArts[id];
   if(c&&n)c.outerHTML=cardH(n);
 }
 async function togFav(id){
-  await togFavDB(id);updCounts();
-  const c=document.getElementById(`cd_${id}`);const n=news.find(x=>x.id===id);
+  const art=news.find(x=>x.id===id)||favArts[id];
+  await togFavDB(id);
+  if(favs.has(id)){if(art){favArts[id]=art;saveFavArts();}}
+  else{delete favArts[id];saveFavArts();}
+  updCounts();
+  const c=document.getElementById(`cd_${id}`);const n=news.find(x=>x.id===id)||favArts[id];
   if(c&&n)c.outerHTML=cardH(n);
   toast(favs.has(id)?'Ajouté aux favoris ⭐':'Retiré des favoris');
 }
-function cpAngs(id){const n=news.find(x=>x.id===id);if(!n?.angles)return;const a=typeof n.angles==='string'?JSON.parse(n.angles):n.angles;navigator.clipboard.writeText(a.map((x,i)=>`Angle ${i+1} — ${x.name} [${x.type}]\n${x.description}`).join('\n\n')).then(()=>toast('Angles copiés ✓')).catch(()=>toast('Copie impossible — HTTPS requis'));}
-function cpArt(id){const n=news.find(x=>x.id===id);if(!n)return;navigator.clipboard.writeText(`${n.title}\n${n.source} · ${n.date}\n\n${n.full_text||n.summary}`).then(()=>toast('Article copié ✓')).catch(()=>toast('Copie impossible — HTTPS requis'));}
+function cpAngs(id){const n=news.find(x=>x.id===id)||favArts[id];if(!n?.angles)return;const a=typeof n.angles==='string'?JSON.parse(n.angles):n.angles;navigator.clipboard.writeText(a.map((x,i)=>`Angle ${i+1} — ${x.name} [${x.type}]\n${x.description}`).join('\n\n')).then(()=>toast('Angles copiés ✓')).catch(()=>toast('Copie impossible — HTTPS requis'));}
+function cpArt(id){const n=news.find(x=>x.id===id)||favArts[id];if(!n)return;navigator.clipboard.writeText(`${n.title}\n${n.source} · ${n.date}\n\n${n.full_text||n.summary}`).then(()=>toast('Article copié ✓')).catch(()=>toast('Copie impossible — HTTPS requis'));}
 function cpPrm(id){const el=document.getElementById(`pt_${id}`);if(el)navigator.clipboard.writeText(el.textContent).then(()=>toast('Prompt copié ✓')).catch(()=>toast('Copie impossible — HTTPS requis'));}
-function dlPrm(id){const n=news.find(x=>x.id===id);if(!n)return;const b=new Blob([ptext(n)],{type:'text/plain'});const a=document.createElement('a');const url=URL.createObjectURL(b);a.href=url;a.download=`brief_${n.id}.txt`;a.click();URL.revokeObjectURL(url);toast('Téléchargé ✓');}
+function dlPrm(id){const n=news.find(x=>x.id===id)||favArts[id];if(!n)return;const b=new Blob([ptext(n)],{type:'text/plain'});const a=document.createElement('a');const url=URL.createObjectURL(b);a.href=url;a.download=`brief_${n.id}.txt`;a.click();URL.revokeObjectURL(url);toast('Téléchargé ✓');}
 async function delNews(id){news=news.filter(x=>x.id!==id);render();await sb(`news?id=eq.${id}`,{method:'DELETE'});toast('Article supprimé');}
 async function delAllNews(){news=[];render();await sb(`news?week_key=eq.${weekKey()}`,{method:'DELETE'});toast('Articles supprimés');}
-async function delFav(id){await sb(`favorites?news_id=eq.${id}`,{method:'DELETE'});favs.delete(id);render();toast('Retiré des favoris');}
-async function delAllFavs(){const ids=[...favs].join(',');if(!ids)return;await sb(`favorites?news_id=in.(${ids})`,{method:'DELETE'});favs.clear();render();toast('Favoris vidés');}
+async function delFav(id){try{await sb(`favorites?news_id=eq.${id}`,{method:'DELETE'});}catch{}favs.delete(id);delete favArts[id];saveFavArts();render();toast('Retiré des favoris');}
+async function delAllFavs(){const ids=[...favs].join(',');if(ids){try{await sb(`favorites?news_id=in.(${ids})`,{method:'DELETE'});}catch{}}favs.clear();favArts={};saveFavArts();render();toast('Favoris vidés');}
 function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2200);}
 function setP(p){document.getElementById('lf').style.width=p+'%';document.getElementById('lpct').textContent=Math.round(p)+'%';}
 
@@ -567,7 +579,7 @@ async function launch(){
 
 async function init(){
   setWeek();
-  // load sources independently so sidebar always renders even if news/favs fail
+  loadFavArts();
   try{await loadSources();}catch(e){console.error('loadSources:',e);}
   renderSrcs();
   try{
