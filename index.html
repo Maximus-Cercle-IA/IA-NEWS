@@ -173,6 +173,10 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;heigh
 #toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 .lc-ia{background:#252860}.lc-me{background:#152e20}.lc-re{background:#2e1515}.lc-ed{background:#152030}.lc-ou{background:#2e2010}.lc-so{background:#22152e}
 .dc-ia{background:#8898f0}.dc-me{background:#5dc488}.dc-re{background:#e08080}.dc-ed{background:#60b8e8}.dc-ou{background:#c8a040}.dc-so{background:#b880f0}
+.cimg-wrap{overflow:hidden;height:160px;border-bottom:1px solid var(--bdr);background:var(--surf2)}
+.cimg{width:100%;height:160px;object-fit:cover;display:block;transition:transform .4s ease}
+.card:hover .cimg{transform:scale(1.03)}
+.cexcerpt{font-size:11.5px;color:var(--mu);line-height:1.55;padding:9px 14px 0;border-top:1px solid var(--bdr);margin-top:2px}
 </style>
 </head>
 <body>
@@ -265,7 +269,7 @@ const CATS={
 };
 const CATBYKEY=Object.fromEntries(Object.entries(CATS).map(([n,v])=>[v.k,n]));
 
-let sources=[],news=[],favs=new Set(),tab='all',scoreMin=60,xp={};
+let sources=[],news=[],favs=new Set(),tab='all',scoreMin=60,xp={},scanResults=[];
 
 async function sb(path,opts={}){
   const {headers:xh,...restOpts}=opts;
@@ -359,7 +363,10 @@ function cardH(n){
   const fv=favs.has(n.id),e=xp[n.id]||{};
   const angs=n.angles?(typeof n.angles==='string'?JSON.parse(n.angles):n.angles):[];
   const cm=CATS[n.category]||{lc:'lc-ia'};
+  const imgH=n.image?`<div class="cimg-wrap"><img class="cimg" src="${esc(n.image)}" alt="" loading="lazy" onerror="this.closest('.cimg-wrap').style.display='none'"></div>`:'';
+  const excH=n.excerpt&&n.excerpt.length>20?`<div class="cexcerpt">${esc(n.excerpt)}</div>`:'';
   return `<div class="card${fv?' fav':''}" id="cd_${n.id}">
+    ${imgH}
     <div class="ch">
       <div class="ch-l">
         <div class="csrc-row"><span class="csrc">${esc(n.source)}</span><span class="cdot-s">·</span><span class="cdate">${esc(n.date)}</span></div>
@@ -371,7 +378,7 @@ function cardH(n){
         <div class="sc ${scCls(n.score)}">${n.score}</div>
       </div>
     </div>
-    <div class="cbody"><div class="csum-wrap"><div class="csum">${esc(n.summary)}</div><button class="cp-inline" onclick="cpArt('${n.id}')" title="Copier l'article"><svg viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg></button></div></div>
+    <div class="cbody">${excH}<div class="csum-wrap" style="margin-top:${n.excerpt?'8px':'0'}"><div class="csum">${esc(n.summary)}</div><button class="cp-inline" onclick="cpArt('${n.id}')" title="Copier l'article"><svg viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg></button></div></div>
     <div class="cbdgs">${gbdg(n.score)}${etiq(n)}</div>
     <div class="cact">
       <button class="ab${e.a?' on':''}" onclick="togX('${n.id}','a')">
@@ -466,109 +473,84 @@ async function delAllFavs(){const ids=[...favs].join(',');if(!ids)return;await s
 function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2200);}
 function setP(p){document.getElementById('lf').style.width=p+'%';document.getElementById('lpct').textContent=Math.round(p)+'%';}
 
+function scoreIA(title,excerpt){
+  const t=((title||'')+' '+(excerpt||'')).toLowerCase();
+  const HIGH=['intelligence artificielle','ia générative','generative ai','large language','llm','chatgpt','gpt-4','gpt-5','gpt 4','gpt 5','claude ai','claude 3','claude 4','gemini','copilot','deep learning','machine learning','apprentissage automatique','modèle de langage','réseau neuronal','nlp','openai','anthropic','mistral','midjourney','stable diffusion','ai agent','agent ia','prompt engineering'];
+  const MED=[' ia ',' ai ','artificiel','algorithme','automatisation','automatisé','données massives','big data','prédictif','robotique','vision par ordinateur','reconnaissance vocale'];
+  let s=0;
+  for(const k of HIGH)if(t.includes(k))s+=3;
+  for(const k of MED)if(t.includes(k))s+=1;
+  return s;
+}
+
+async function devArticle(art){
+  const prompt=`Tu es un assistant de veille pour Cercle IA — formation IA pour professionnels non-techniques (avocats, RH, médecins, consultants, dirigeants PME).
+
+Article :
+Titre : ${art.title}
+Source : ${art.source} | Date : ${art.date} | Catégorie : ${art.category}${art.excerpt?`
+Extrait : ${art.excerpt.slice(0,200)}`:''}
+
+Retourne UNIQUEMENT ce JSON minifié sur une seule ligne (commence par {) :
+{"summary":"analyse 2-3 phrases 60 mots max en français pour un non-technicien","full_text":"analyse complète 80-100 mots en français","score":0-100,"scores":{"metier":0-40,"impact":0-25,"source":0-15,"fraicheur":0-10,"viral":0-10},"angles":[{"name":"nom court","description":"1 phrase 15 mots max","type":"Visibilité"},{"name":"nom court","description":"1 phrase 15 mots max","type":"Crédibilité"},{"name":"nom court","description":"1 phrase 15 mots max","type":"Visibilité"}]}
+Règles : metier 35-40=impact direct sur ce professionnel; 20-34=angle possible; impact 22-25=changement concret; source 13-15=institution reconnue; fraicheur 9-10=<3j; viral 9-10=stat choc. score=somme. Si non lié à l'IA→score≤25.`;
+  try{
+    const resp=await fetch(PROXY,{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({mode:'develop',model:'claude-sonnet-4-6',max_tokens:700,messages:[{role:'user',content:prompt}]})});
+    if(!resp.ok)return null;
+    const data=await resp.json();
+    if(data.error)return null;
+    const raw=(data.content||[]).filter(b=>b.type==='text').map(b=>b.text).join('');
+    const s=raw.indexOf('{'),e=raw.lastIndexOf('}');
+    if(s===-1||e===-1)return null;
+    return JSON.parse(raw.slice(s,e+1).replace(/[ --]/g,''));
+  }catch{return null;}
+}
+
 async function launch(){
   const active=sources.filter(s=>s.is_on);
   if(!active.length)return toast('Activez au moins une source');
   const btn=document.getElementById('gob');
-  btn.disabled=true;btn.innerHTML='<div class="spin"></div> Analyse…';
+  btn.disabled=true;btn.innerHTML='<div class="spin"></div> Veille…';
   const lov=document.getElementById('lov');lov.classList.add('show');
-  const steps=['Recherche web IA','Analyse & scoring','Sauvegarde'];
-  let cur=0;
-  const renderSteps=()=>{document.getElementById('lsteps').innerHTML=steps.map((s,i)=>`<div class="lstep${i<cur?' done':i===cur?' cur':''}"><div class="ldot"></div>${s}${i<cur?' ✓':''}</div>`).join('');};
-  renderSteps();setP(5);
-  document.getElementById('lmsg').textContent='Lancement de la recherche…';
-  const today=new Date().toLocaleDateString('fr-FR',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
-  const prompt=`Veille IA Cercle IA — ${today}
-
-Tu es un assistant de veille IA pour des professionnels francophones non-techniques (avocats, RH, médecins, consultants, dirigeants PME).
-
-MISSION : Utilise web_search pour trouver 7 vrais articles IA publiés cette semaine (7 derniers jours maximum). Limite-toi à 3-4 recherches maximum. Cherche sur ces sources en priorité :
-${active.map(s=>`- ${s.name} (${s.cat})`).join('\n')}
-
-RÈGLES ABSOLUES :
-- Chaque article doit exister réellement — URL vérifiable et fonctionnelle
-- Date de publication dans les 7 derniers jours
-- Pertinent pour des professionnels non-techniques face à l'IA dans leur métier
-- Si une source n'a pas d'article récent pertinent, cherche sur d'autres médias sérieux
-
-IMPORTANT: Une fois les articles trouvés, retourne UNIQUEMENT un tableau JSON minifié sur UNE SEULE LIGNE (zéro retour à la ligne dans le JSON, zéro texte avant ou après, commence immédiatement par [).
-Format exact: {"id":"n1","title":"titre court","source":"nom du média","url":"https://url-reelle-article","date":"JJ/MM/AAAA","category":"IA Générale & Big Tech|Métiers & Professions|Réglementation & Éthique|Éducation & Formation|Outils & Usages Pratiques|Société & Emploi","summary":"1-2 phrases max 60 mots en français","full_text":"3-4 phrases max 60 mots en français","score":40-98,"scores":{"metier":0-40,"impact":0-25,"source":0-15,"fraicheur":0-10,"viral":0-10},"angles":[{"name":"nom court","description":"1 phrase 15 mots max","type":"Visibilité"},{"name":"nom","description":"1 phrase 15 mots max","type":"Crédibilité"},{"name":"nom","description":"1 phrase 15 mots max","type":"Visibilité"}]}
-
-Règles score: metier 35-40=direct, 20-34=redirigeable; impact 22-25=changement concret; source 13-15=institution majeure; fraicheur 9-10=<3j; viral 9-10=chiffre choc. score=somme. Max 5/catégorie. Ordre décroissant. Score<40 exclus.`;
-
-  let loadSecs=0;
-  const lTick=setInterval(()=>{
-    loadSecs++;
-    setP(Math.min(88,5+Math.round((loadSecs/180)*83)));
-    const m=Math.floor(loadSecs/60),s=loadSecs%60;
-    document.getElementById('lmsg').textContent=`Recherche web… ${m>0?m+'min ':''}${s}s`;
-  },1000);
+  document.getElementById('lsteps').innerHTML='';
+  setP(5);document.getElementById('lmsg').textContent='Lecture des flux RSS…';
   try{
-    const resp=await fetch(PROXY,{
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:5000,messages:[{role:'user',content:prompt}]})
-    });
-    if(!resp.ok){
-      const errText=await resp.text();
-      const proxySource=resp.headers.get('X-Proxy-Error-Source');
-      const prefix=proxySource==='anthropic'?'Anthropic':'Proxy';
-      throw new Error(prefix+' '+resp.status+': '+errText);
-    }
-    const reader=resp.body.getReader(),dec=new TextDecoder();
-    let buf='',raw='';
-    while(true){
-      const{done,value}=await reader.read();
-      if(done)break;
-      buf+=dec.decode(value,{stream:true});
-      const lines=buf.split('\n');buf=lines.pop();
-      for(const line of lines){
-        if(!line.startsWith('data: '))continue;
-        const chunk=line.slice(6).trim();
-        if(!chunk||chunk==='[DONE]')continue;
-        try{
-          const ev=JSON.parse(chunk);
-          if(ev.type==='error')throw new Error(ev.error?.message||'Erreur stream Anthropic');
-          if(ev.type==='content_block_delta'&&ev.delta?.type==='text_delta')raw+=ev.delta.text;
-        }catch(e){if(/Erreur/.test(e.message))throw e;}
-      }
-    }
-    console.log('Réponse brute Claude:',raw.slice(0,300));
-    cur=1;renderSteps();setP(90);document.getElementById('lmsg').textContent='Sauvegarde…';cur=2;renderSteps();
-    const s=raw.search(/\[\s*\{/),e=raw.lastIndexOf(']');
-    if(s===-1||e===-1||e<=s)throw new Error('Réponse JSON invalide — vérifiez la console (F12)');
-    let jsonStr=raw.slice(s,e+1);
-    // sanitize control characters that break JSON parsing
-    jsonStr=jsonStr.replace(/[\x00-\x08\x0b\x0c\x0e-\x1f]/g,'');
-    let parsed;
-    try{parsed=JSON.parse(jsonStr);}catch(je){
-      // attempt recovery: extract all complete objects from the array
-      const objs=[];let depth=0,start=-1;
-      for(let i=0;i<jsonStr.length;i++){
-        if(jsonStr[i]==='{'){if(depth===0)start=i;depth++;}
-        else if(jsonStr[i]==='}'){depth--;if(depth===0&&start!==-1){try{objs.push(JSON.parse(jsonStr.slice(start,i+1)));start=-1;}catch{}}}
-      }
-      if(!objs.length)throw new Error('Réponse Claude illisible — relancez la veille');
-      parsed=objs;
-    }
-    news=parsed.filter(n=>n.score>=40).sort((a,b)=>b.score-a.score);
-    await saveAllNews(news);
-    setP(100);cur=steps.length;renderSteps();
+    const rssResp=await fetch('/api/rss',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({sources:active})});
+    if(!rssResp.ok){const e=await rssResp.json().catch(()=>({}));throw new Error(e.error||'RSS HTTP '+rssResp.status);}
+    const all=await rssResp.json();
+    if(!all.length)throw new Error('Aucun article trouvé dans les flux RSS — vérifiez que vos sources sont actives');
+    setP(20);document.getElementById('lmsg').textContent='Tri pertinence IA…';
+    const scored=all.map(a=>({...a,_ias:scoreIA(a.title,a.excerpt)}));
+    const relevant=scored.filter(a=>a._ias>0).sort((a,b)=>b._ias-a._ias);
+    const todev=relevant.length?relevant:scored;
+    document.getElementById('lsteps').innerHTML=todev.slice(0,4).map(a=>`<div class="lstep done"><div class="ldot"></div>${esc(a.source)} — ${esc(a.title.slice(0,32))}…</div>`).join('')+(todev.length>4?`<div class="lstep"><div class="ldot"></div>+${todev.length-4} autres</div>`:'');
     await new Promise(r=>setTimeout(r,400));
-    lov.classList.remove('show');render();toast(`${news.length} news analysées ✓`);
+    const developed=[];
+    for(let i=0;i<todev.length;i++){
+      const art=todev[i];
+      setP(25+Math.round((i/todev.length)*68));
+      document.getElementById('lmsg').textContent=`Analyse ${i+1}/${todev.length}…`;
+      document.getElementById('lsteps').innerHTML=`<div class="lstep cur"><div class="ldot"></div>${esc(art.source)} — ${esc(art.title.slice(0,38))}…</div>`;
+      const analysis=await devArticle(art);
+      developed.push({...art,...(analysis||{summary:'Analyse indisponible',full_text:'',score:50,scores:null,angles:[]})});
+    }
+    setP(95);document.getElementById('lmsg').textContent='Sauvegarde…';document.getElementById('lsteps').innerHTML='';
+    news=developed.filter(n=>n.score>=40).sort((a,b)=>b.score-a.score);
+    scanResults=[];
+    try{await saveAllNews(news);}catch(e){console.warn('Save:',e);}
+    setP(100);
+    await new Promise(r=>setTimeout(r,300));
+    lov.classList.remove('show');render();
+    toast(`${news.length} articles analysés ✓`);
   }catch(err){
     lov.classList.remove('show');
     console.error('Erreur veille:',err);
     const msg=err.message||'';
-    if(/timeout|idle|partial|stream/i.test(msg))toast('Délai dépassé — relancez la veille (réponse trop longue)');
+    if(/429|rate.?limit/i.test(msg))toast('Limite Anthropic — attendez 1 min et relancez');
     else if(/401|403|api.key/i.test(msg))toast('Clé API invalide — vérifiez ANTHROPIC_API_KEY dans Vercel');
-    else if(/Anthropic 404/i.test(msg))toast('Modèle Claude introuvable côté Anthropic — model ID mis à jour, redéployez');
-    else if(/404/i.test(msg))toast('Route /api/claude introuvable — vérifiez le déploiement Vercel');
-    else if(/web.search|search.*not.*enabled|not.*enabled.*search/i.test(msg))toast('Web search non activé — activez dans console.anthropic.com → Settings → Privacy');
-    else if(/JSON invalide/i.test(msg))toast('Réponse JSON invalide — ouvrez F12 console pour voir la réponse brute de Claude');
-    else toast('Erreur Claude : '+(msg.length>80?msg.slice(0,80)+'…':msg));
+    else toast('Erreur : '+(msg.length>90?msg.slice(0,90)+'…':msg));
   }finally{
-    clearInterval(lTick);
     btn.disabled=false;
     btn.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8" fill="currentColor" stroke="none"/></svg> Lancer la veille';
   }
