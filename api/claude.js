@@ -20,6 +20,9 @@ module.exports = async function handler(req, res) {
       body: JSON.stringify({ ...req.body, stream: false }),
     });
     const data = await r.json();
+    if (!r.ok) {
+      res.setHeader('X-Proxy-Error-Source', 'anthropic');
+    }
     res.status(r.status).json(data);
   } catch (err) {
     res.status(500).json({ error: err.message });

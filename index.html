@@ -475,11 +475,13 @@ Règles score: metier 35-40=direct, 20-34=redirigeable; impact 22-25=changement 
     const resp=await fetch(PROXY,{
       method:'POST',
       headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:3500,messages:[{role:'user',content:prompt}]})
+      body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:3500,messages:[{role:'user',content:prompt}]})
     });
     if(!resp.ok){
       const errText=await resp.text();
-      throw new Error('Proxy '+resp.status+': '+errText);
+      const proxySource=resp.headers.get('X-Proxy-Error-Source');
+      const prefix=proxySource==='anthropic'?'Anthropic':'Proxy';
+      throw new Error(prefix+' '+resp.status+': '+errText);
     }
     const data=await resp.json();
     const raw=data.content.filter(b=>b.type==='text').map(b=>b.text).join('');
@@ -511,7 +513,8 @@ Règles score: metier 35-40=direct, 20-34=redirigeable; impact 22-25=changement 
     const msg=err.message||'';
     if(/timeout|idle|partial|stream/i.test(msg))toast('Délai dépassé — relancez la veille (réponse trop longue)');
     else if(/401|403|api.key/i.test(msg))toast('Clé API invalide — vérifiez ANTHROPIC_API_KEY dans Vercel');
-    else if(/404/i.test(msg))toast('Route /api/claude introuvable — vérifiez le déploiement');
+    else if(/Anthropic 404/i.test(msg))toast('Modèle Claude introuvable côté Anthropic — model ID mis à jour, redéployez');
+    else if(/404/i.test(msg))toast('Route /api/claude introuvable — vérifiez le déploiement Vercel');
     else toast('Erreur Claude : '+(msg.length>80?msg.slice(0,80)+'…':msg));
   }finally{
     btn.disabled=false;
