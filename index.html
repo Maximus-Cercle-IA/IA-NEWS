@@ -139,6 +139,11 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;heigh
 .cpbtn{flex:1;display:flex;align-items:center;justify-content:center;gap:5px;padding:7px;border-radius:4px;border:1px solid var(--bdr);background:transparent;color:var(--mu);font-size:11px;font-weight:500;font-family:var(--fb);cursor:pointer;transition:all .15s}
 .cpbtn:hover{border-color:var(--or);color:var(--or);background:var(--or-dim)}
 .cpbtn svg{width:11px;height:11px;stroke:currentColor;fill:none;stroke-width:1.8}
+.csum-wrap{position:relative;padding-bottom:2px}
+.cp-inline{position:absolute;bottom:-2px;right:0;display:flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:4px;border:1px solid transparent;background:transparent;color:var(--mu);cursor:pointer;opacity:0;transition:opacity .15s,border-color .15s,background .15s;padding:0}
+.csum-wrap:hover .cp-inline,.cp-inline:focus{opacity:1}
+.cp-inline:hover{border-color:var(--bdr2);background:var(--surf2);color:var(--cr2)}
+.cp-inline svg{width:12px;height:12px;stroke:currentColor;fill:none;stroke-width:1.8}
 .ptxt{font-size:11px;color:var(--cr2);line-height:1.6;white-space:pre-wrap;font-family:'Courier New',monospace;background:var(--bg);padding:12px;border-radius:4px;border:1px solid var(--bdr);max-height:220px;overflow-y:auto}
 #lov{position:fixed;inset:0;background:rgba(13,26,22,.93);backdrop-filter:blur(8px);z-index:200;display:none;flex-direction:column;align-items:center;justify-content:center;gap:24px}
 #lov.show{display:flex}
@@ -357,17 +362,17 @@ function cardH(n){
         <div class="sc ${scCls(n.score)}">${n.score}</div>
       </div>
     </div>
-    <div class="cbody"><div class="csum">${esc(n.summary)}</div></div>
+    <div class="cbody"><div class="csum-wrap"><div class="csum">${esc(n.summary)}</div><button class="cp-inline" onclick="cpArt('${n.id}')" title="Copier l'article"><svg viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg></button></div></div>
     <div class="cbdgs">${gbdg(n.score)}${etiq(n)}</div>
     <div class="cact">
       <button class="ab${e.a?' on':''}" onclick="togX('${n.id}','a')">
         <svg viewBox="0 0 24 24"><path d="M9.663 17h4.673M12 3v1m6.364 1.636-.707.707M21 12h-1M4 12H3m3.343-5.657-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/></svg>
         Angles
       </button>
-      <button class="ab" onclick="cpArt('${n.id}')">
-        <svg viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
-        Copier l'article
-      </button>
+      <a class="ab" href="${n.url||'#'}" target="_blank" rel="noopener noreferrer" style="text-decoration:none">
+        <svg viewBox="0 0 24 24"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3"/></svg>
+        Lire l'article
+      </a>
       <button class="ab${e.p?' on':''}" onclick="togX('${n.id}','p')">
         <svg viewBox="0 0 24 24"><path d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
         Prompt
