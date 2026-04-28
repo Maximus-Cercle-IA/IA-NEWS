@@ -144,6 +144,14 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;heigh
 .csum-wrap:hover .cp-inline,.cp-inline:focus{opacity:1}
 .cp-inline:hover{border-color:var(--bdr2);background:var(--surf2);color:var(--cr2)}
 .cp-inline svg{width:12px;height:12px;stroke:currentColor;fill:none;stroke-width:1.8}
+.del-btn{width:22px;height:22px;display:flex;align-items:center;justify-content:center;border-radius:4px;border:none;background:transparent;color:var(--mu);cursor:pointer;opacity:0;transition:opacity .15s,background .15s,color .15s;padding:0;flex-shrink:0}
+.card:hover .del-btn{opacity:1}
+.del-btn:hover{background:rgba(220,60,60,.15);color:#e05555}
+.del-btn svg{width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2}
+.del-all-bar{display:flex;justify-content:flex-end;margin-bottom:14px}
+.del-all-btn{display:flex;align-items:center;gap:5px;padding:5px 11px;border-radius:4px;border:1px solid var(--bdr);background:transparent;color:var(--mu);font-size:11px;font-family:var(--fb);cursor:pointer;transition:all .15s;white-space:nowrap}
+.del-all-btn:hover{border-color:#e05555;color:#e05555;background:rgba(220,60,60,.08)}
+.del-all-btn svg{width:11px;height:11px;stroke:currentColor;fill:none;stroke-width:1.8}
 .ptxt{font-size:11px;color:var(--cr2);line-height:1.6;white-space:pre-wrap;font-family:'Courier New',monospace;background:var(--bg);padding:12px;border-radius:4px;border:1px solid var(--bdr);max-height:220px;overflow-y:auto}
 #lov{position:fixed;inset:0;background:rgba(13,26,22,.93);backdrop-filter:blur(8px);z-index:200;display:none;flex-direction:column;align-items:center;justify-content:center;gap:24px}
 #lov.show{display:flex}
@@ -358,6 +366,7 @@ function cardH(n){
         <div class="ctitle">${esc(n.title)}</div>
       </div>
       <div class="ch-r">
+        <button class="del-btn" onclick="${tab==='favs'?`delFav('${n.id}')`:`delNews('${n.id}')`}" title="${tab==='favs'?'Retirer des favoris':'Supprimer l\'article'}"><svg viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
         <button class="fv-btn${fv?' on':''}" onclick="togFav('${n.id}')">${fv?'⭐':'☆'}</button>
         <div class="sc ${scCls(n.score)}">${n.score}</div>
       </div>
@@ -422,7 +431,11 @@ function render(){
   if(!items.length){rs.innerHTML='<div class="empty" style="min-height:40vh"><div class="ehex" style="width:56px;height:56px"><svg viewBox="0 0 24 24" style="width:22px;height:22px"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg></div><h2 style="font-size:18px">Aucune news ici</h2><p>Ajustez le score ou lancez une nouvelle veille.</p></div>';return;}
   const byCat={};
   items.forEach(n=>{if(!byCat[n.category])byCat[n.category]=[];if(byCat[n.category].length<5)byCat[n.category].push(n);});
-  rs.innerHTML=Object.entries(byCat).map(([cat,its])=>{
+  const isFavTab=tab==='favs';
+  const delAllFn=isFavTab?'delAllFavs()':'delAllNews()';
+  const delAllLabel=isFavTab?'Vider les favoris':'Tout supprimer';
+  const bar=`<div class="del-all-bar"><button class="del-all-btn" onclick="${delAllFn}"><svg viewBox="0 0 24 24"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/></svg>${delAllLabel}</button></div>`;
+  rs.innerHTML=bar+Object.entries(byCat).map(([cat,its])=>{
     const m=CATS[cat]||{lc:'lc-ia'};
     return `<div class="cat-grp">
       <div class="cat-hdr"><span class="cat-lbl ${m.lc}">${cat}</span><span class="cat-cnt">${its.length} news</span><div class="cat-div"></div></div>
@@ -446,6 +459,10 @@ function cpAngs(id){const n=news.find(x=>x.id===id);if(!n?.angles)return;const a
 function cpArt(id){const n=news.find(x=>x.id===id);if(!n)return;navigator.clipboard.writeText(`${n.title}\n${n.source} · ${n.date}\n\n${n.full_text||n.summary}`).then(()=>toast('Article copié ✓')).catch(()=>toast('Copie impossible — HTTPS requis'));}
 function cpPrm(id){const el=document.getElementById(`pt_${id}`);if(el)navigator.clipboard.writeText(el.textContent).then(()=>toast('Prompt copié ✓')).catch(()=>toast('Copie impossible — HTTPS requis'));}
 function dlPrm(id){const n=news.find(x=>x.id===id);if(!n)return;const b=new Blob([ptext(n)],{type:'text/plain'});const a=document.createElement('a');const url=URL.createObjectURL(b);a.href=url;a.download=`brief_${n.id}.txt`;a.click();URL.revokeObjectURL(url);toast('Téléchargé ✓');}
+async function delNews(id){news=news.filter(x=>x.id!==id);render();await sb(`news?id=eq.${id}`,{method:'DELETE'});toast('Article supprimé');}
+async function delAllNews(){news=[];render();await sb(`news?week_key=eq.${weekKey()}`,{method:'DELETE'});toast('Articles supprimés');}
+async function delFav(id){await sb(`favorites?news_id=eq.${id}`,{method:'DELETE'});favs.delete(id);render();toast('Retiré des favoris');}
+async function delAllFavs(){const ids=[...favs].join(',');if(!ids)return;await sb(`favorites?news_id=in.(${ids})`,{method:'DELETE'});favs.clear();render();toast('Favoris vidés');}
 function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2200);}
 function setP(p){document.getElementById('lf').style.width=p+'%';document.getElementById('lpct').textContent=Math.round(p)+'%';}
 
