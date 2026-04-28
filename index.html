@@ -256,6 +256,21 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;heigh
 const SB='https://yybmytkaxnditlmhspft.supabase.co';
 const SK='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl5Ym15dGtheG5kaXRsbWhzcGZ0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzcyNzA2NTAsImV4cCI6MjA5Mjg0NjY1MH0.ImN0nekJKPAX35Yrlm-cFCIBtGfaTUyl5C4mP9TNVUo';
 const PROXY='/api/claude';
+const LS_SOURCES='cia_sources';
+const DEFAULT_SOURCES=[
+  {id:'s1',name:'The Verge AI',url:'https://www.theverge.com/ai-artificial-intelligence',cat:'IA Générale',is_on:true,position:1},
+  {id:'s2',name:'MIT Tech Review',url:'https://www.technologyreview.com/',cat:'IA Générale',is_on:true,position:2},
+  {id:'s3',name:'HBR France',url:'https://www.hbrfrance.fr/innovation',cat:'Dirigeants / RH',is_on:true,position:3},
+  {id:'s4',name:'Artificial Lawyer',url:'https://www.artificiallawyer.com/',cat:'Métiers',is_on:true,position:4},
+  {id:'s5',name:'Le Monde IA',url:'https://www.lemonde.fr/intelligence-artificielle/',cat:'IA Générale',is_on:true,position:5},
+  {id:'s6',name:'IAPP',url:'https://iapp.org/news/a',cat:'Réglementation',is_on:true,position:6},
+  {id:'s7',name:"Ben's Bites",url:'https://www.bensbites.com',cat:'Outils',is_on:true,position:7},
+  {id:'s8',name:'Legal Geek',url:'https://www.legalgeek.co/blog',cat:'Métiers',is_on:true,position:8},
+  {id:'s9',name:'HR Executive',url:'https://hrexecutive.com/category/hr-technology',cat:'Métiers',is_on:true,position:9},
+  {id:'s10',name:'Usbek & Rica',url:'https://usbeketrica.com/fr/tech-and-innovation',cat:'Société',is_on:true,position:10},
+  {id:'s11',name:'FutureTools',url:'https://futuretools.io/news',cat:'Outils',is_on:true,position:11},
+];
+function saveSourcesToLS(){try{localStorage.setItem(LS_SOURCES,JSON.stringify(sources));}catch{}}
 
 function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 
@@ -287,7 +302,11 @@ function setWeek(){
   document.getElementById('wlbl').textContent=`${f(m)} – ${f(s)}`;
 }
 
-async function loadSources(){sources=await sb('sources?select=*&order=position');}
+async function loadSources(){
+  try{const ls=localStorage.getItem(LS_SOURCES);if(ls){const p=JSON.parse(ls);if(p&&p.length){sources=p;return;}}}catch{}
+  try{sources=await sb('sources?select=*&order=position');if(sources.length){saveSourcesToLS();return;}}catch{}
+  sources=[...DEFAULT_SOURCES];saveSourcesToLS();
+}
 async function loadNews(){news=await sb(`news?week_key=eq.${weekKey()}&select=*&order=score.desc`);}
 async function loadFavs(){const r=await sb('favorites?select=news_id');favs=new Set(r.map(x=>x.news_id));}
 async function patchSrc(id,data){await sb(`sources?id=eq.${id}`,{method:'PATCH',body:JSON.stringify(data)});}
@@ -316,8 +335,8 @@ function renderSrcs(){
       <button class="rm-btn" onclick="rmSrc('${s.id}')">×</button>
     </div>`).join('');
 }
-async function togSrc(id,val){const s=sources.find(x=>x.id===id);if(!s)return;s.is_on=val;renderSrcs();await patchSrc(id,{is_on:val});}
-async function rmSrc(id){sources=sources.filter(x=>x.id!==id);renderSrcs();await deleteSrc(id);}
+async function togSrc(id,val){const s=sources.find(x=>x.id===id);if(!s)return;s.is_on=val;renderSrcs();saveSourcesToLS();try{await patchSrc(id,{is_on:val});}catch{}}
+async function rmSrc(id){sources=sources.filter(x=>x.id!==id);renderSrcs();saveSourcesToLS();try{await deleteSrc(id);}catch{}}
 async function addSrc(){
   const url=document.getElementById('nu').value.trim();
   const name=document.getElementById('nn').value.trim();
@@ -325,15 +344,10 @@ async function addSrc(){
   let host;try{host=new URL(url).hostname;}catch{return toast('URL invalide');}
   const cat=document.getElementById('nc').value;
   const s={id:'c'+Date.now(),name:name||host,url,cat,is_on:true,position:sources.length+1};
-  sources.push(s);renderSrcs();
+  sources.push(s);renderSrcs();saveSourcesToLS();
   document.getElementById('nu').value='';document.getElementById('nn').value='';document.getElementById('nc').selectedIndex=0;
-  try{
-    await sb('sources',{method:'POST',body:JSON.stringify(s),headers:{'Prefer':'resolution=merge-duplicates,return=minimal'}});
-    toast('Source ajoutée ✓');
-  }catch(err){
-    console.error('addSrc:',err);
-    toast('Source ajoutée localement (erreur DB : '+err.message.slice(0,60)+')');
-  }
+  toast('Source ajoutée ✓');
+  try{await sb('sources',{method:'POST',body:JSON.stringify(s),headers:{'Prefer':'resolution=merge-duplicates,return=minimal'}});}catch{}
 }
 
 function onScore(v){scoreMin=parseInt(v);document.getElementById('svd').textContent=v;render();}
