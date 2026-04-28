@@ -139,6 +139,19 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;heigh
 .cpbtn{flex:1;display:flex;align-items:center;justify-content:center;gap:5px;padding:7px;border-radius:4px;border:1px solid var(--bdr);background:transparent;color:var(--mu);font-size:11px;font-weight:500;font-family:var(--fb);cursor:pointer;transition:all .15s}
 .cpbtn:hover{border-color:var(--or);color:var(--or);background:var(--or-dim)}
 .cpbtn svg{width:11px;height:11px;stroke:currentColor;fill:none;stroke-width:1.8}
+.csum-wrap{position:relative;padding-bottom:2px}
+.cp-inline{position:absolute;bottom:-2px;right:0;display:flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:4px;border:1px solid transparent;background:transparent;color:var(--mu);cursor:pointer;opacity:0;transition:opacity .15s,border-color .15s,background .15s;padding:0}
+.csum-wrap:hover .cp-inline,.cp-inline:focus{opacity:1}
+.cp-inline:hover{border-color:var(--bdr2);background:var(--surf2);color:var(--cr2)}
+.cp-inline svg{width:12px;height:12px;stroke:currentColor;fill:none;stroke-width:1.8}
+.del-btn{width:22px;height:22px;display:flex;align-items:center;justify-content:center;border-radius:4px;border:none;background:transparent;color:var(--mu);cursor:pointer;opacity:0;transition:opacity .15s,background .15s,color .15s;padding:0;flex-shrink:0}
+.card:hover .del-btn{opacity:1}
+.del-btn:hover{background:rgba(220,60,60,.15);color:#e05555}
+.del-btn svg{width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2}
+.del-all-bar{display:flex;justify-content:flex-end;margin-bottom:14px}
+.del-all-btn{display:flex;align-items:center;gap:5px;padding:5px 11px;border-radius:4px;border:1px solid var(--bdr);background:transparent;color:var(--mu);font-size:11px;font-family:var(--fb);cursor:pointer;transition:all .15s;white-space:nowrap}
+.del-all-btn:hover{border-color:#e05555;color:#e05555;background:rgba(220,60,60,.08)}
+.del-all-btn svg{width:11px;height:11px;stroke:currentColor;fill:none;stroke-width:1.8}
 .ptxt{font-size:11px;color:var(--cr2);line-height:1.6;white-space:pre-wrap;font-family:'Courier New',monospace;background:var(--bg);padding:12px;border-radius:4px;border:1px solid var(--bdr);max-height:220px;overflow-y:auto}
 #lov{position:fixed;inset:0;background:rgba(13,26,22,.93);backdrop-filter:blur(8px);z-index:200;display:none;flex-direction:column;align-items:center;justify-content:center;gap:24px}
 #lov.show{display:flex}
@@ -160,6 +173,25 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;heigh
 #toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 .lc-ia{background:#252860}.lc-me{background:#152e20}.lc-re{background:#2e1515}.lc-ed{background:#152030}.lc-ou{background:#2e2010}.lc-so{background:#22152e}
 .dc-ia{background:#8898f0}.dc-me{background:#5dc488}.dc-re{background:#e08080}.dc-ed{background:#60b8e8}.dc-ou{background:#c8a040}.dc-so{background:#b880f0}
+.scan-hdr{margin-bottom:20px}
+.scan-title{font-family:var(--fd);font-size:22px;font-weight:400;margin-bottom:6px}
+.scan-sub{font-size:12px;color:var(--mu);line-height:1.5}
+.scan-actions{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;gap:10px}
+.btn-selall{background:transparent;border:1px solid var(--bdr2);color:var(--mu);padding:7px 12px;border-radius:4px;font-size:11px;font-family:var(--fb);cursor:pointer;transition:all .15s}
+.btn-selall:hover{border-color:var(--cr2);color:var(--cr2)}
+.btn-develop{display:flex;align-items:center;gap:7px;background:var(--or);color:#fff;border:none;padding:0 18px;height:36px;border-radius:4px;font-family:var(--fb);font-size:13px;font-weight:500;cursor:pointer;transition:background .2s,box-shadow .2s}
+.btn-develop:hover{background:var(--or2);box-shadow:0 4px 18px var(--or-glow)}
+.btn-develop:disabled{background:var(--mu2);cursor:not-allowed;box-shadow:none}
+.scan-list{display:flex;flex-direction:column;gap:8px}
+.scan-item{display:flex;align-items:center;gap:12px;background:var(--surf);border:1px solid var(--bdr);border-radius:6px;padding:12px 14px;cursor:pointer;transition:border-color .15s}
+.scan-item:hover{border-color:var(--bdr2)}
+.scan-item input[type=checkbox]{width:16px;height:16px;accent-color:var(--or);cursor:pointer;flex-shrink:0}
+.scan-item-body{flex:1;min-width:0}
+.scan-meta{display:flex;align-items:center;gap:7px;margin-bottom:5px;flex-wrap:wrap}
+.scan-cat-tag{font-size:10px;background:var(--surf2);border:1px solid var(--bdr2);color:var(--mu);padding:2px 7px;border-radius:10px}
+.scan-ititle{font-size:13px;font-weight:500;color:var(--cr);line-height:1.4}
+.scan-link{display:flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:4px;border:1px solid var(--bdr);color:var(--mu);flex-shrink:0;transition:all .15s;text-decoration:none}
+.scan-link:hover{border-color:var(--or);color:var(--or);background:var(--or-dim)}
 </style>
 </head>
 <body>
@@ -252,7 +284,7 @@ const CATS={
 };
 const CATBYKEY=Object.fromEntries(Object.entries(CATS).map(([n,v])=>[v.k,n]));
 
-let sources=[],news=[],favs=new Set(),tab='all',scoreMin=60,xp={};
+let sources=[],news=[],favs=new Set(),tab='all',scoreMin=60,xp={},scanResults=[];
 
 async function sb(path,opts={}){
   const {headers:xh,...restOpts}=opts;
@@ -353,21 +385,22 @@ function cardH(n){
         <div class="ctitle">${esc(n.title)}</div>
       </div>
       <div class="ch-r">
+        <button class="del-btn" onclick="${tab==='favs'?`delFav('${n.id}')`:`delNews('${n.id}')`}" title="${tab==='favs'?'Retirer des favoris':'Supprimer l\'article'}"><svg viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
         <button class="fv-btn${fv?' on':''}" onclick="togFav('${n.id}')">${fv?'⭐':'☆'}</button>
         <div class="sc ${scCls(n.score)}">${n.score}</div>
       </div>
     </div>
-    <div class="cbody"><div class="csum">${esc(n.summary)}</div></div>
+    <div class="cbody"><div class="csum-wrap"><div class="csum">${esc(n.summary)}</div><button class="cp-inline" onclick="cpArt('${n.id}')" title="Copier l'article"><svg viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg></button></div></div>
     <div class="cbdgs">${gbdg(n.score)}${etiq(n)}</div>
     <div class="cact">
       <button class="ab${e.a?' on':''}" onclick="togX('${n.id}','a')">
         <svg viewBox="0 0 24 24"><path d="M9.663 17h4.673M12 3v1m6.364 1.636-.707.707M21 12h-1M4 12H3m3.343-5.657-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/></svg>
         Angles
       </button>
-      <button class="ab" onclick="cpArt('${n.id}')">
-        <svg viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
-        Copier l'article
-      </button>
+      <a class="ab" href="${n.url||'#'}" target="_blank" rel="noopener noreferrer" style="text-decoration:none">
+        <svg viewBox="0 0 24 24"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3"/></svg>
+        Lire l'article
+      </a>
       <button class="ab${e.p?' on':''}" onclick="togX('${n.id}','p')">
         <svg viewBox="0 0 24 24"><path d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
         Prompt
@@ -417,7 +450,11 @@ function render(){
   if(!items.length){rs.innerHTML='<div class="empty" style="min-height:40vh"><div class="ehex" style="width:56px;height:56px"><svg viewBox="0 0 24 24" style="width:22px;height:22px"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg></div><h2 style="font-size:18px">Aucune news ici</h2><p>Ajustez le score ou lancez une nouvelle veille.</p></div>';return;}
   const byCat={};
   items.forEach(n=>{if(!byCat[n.category])byCat[n.category]=[];if(byCat[n.category].length<5)byCat[n.category].push(n);});
-  rs.innerHTML=Object.entries(byCat).map(([cat,its])=>{
+  const isFavTab=tab==='favs';
+  const delAllFn=isFavTab?'delAllFavs()':'delAllNews()';
+  const delAllLabel=isFavTab?'Vider les favoris':'Tout supprimer';
+  const bar=`<div class="del-all-bar"><button class="del-all-btn" onclick="${delAllFn}"><svg viewBox="0 0 24 24"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/></svg>${delAllLabel}</button></div>`;
+  rs.innerHTML=bar+Object.entries(byCat).map(([cat,its])=>{
     const m=CATS[cat]||{lc:'lc-ia'};
     return `<div class="cat-grp">
       <div class="cat-hdr"><span class="cat-lbl ${m.lc}">${cat}</span><span class="cat-cnt">${its.length} news</span><div class="cat-div"></div></div>
@@ -441,6 +478,10 @@ function cpAngs(id){const n=news.find(x=>x.id===id);if(!n?.angles)return;const a
 function cpArt(id){const n=news.find(x=>x.id===id);if(!n)return;navigator.clipboard.writeText(`${n.title}\n${n.source} · ${n.date}\n\n${n.full_text||n.summary}`).then(()=>toast('Article copié ✓')).catch(()=>toast('Copie impossible — HTTPS requis'));}
 function cpPrm(id){const el=document.getElementById(`pt_${id}`);if(el)navigator.clipboard.writeText(el.textContent).then(()=>toast('Prompt copié ✓')).catch(()=>toast('Copie impossible — HTTPS requis'));}
 function dlPrm(id){const n=news.find(x=>x.id===id);if(!n)return;const b=new Blob([ptext(n)],{type:'text/plain'});const a=document.createElement('a');const url=URL.createObjectURL(b);a.href=url;a.download=`brief_${n.id}.txt`;a.click();URL.revokeObjectURL(url);toast('Téléchargé ✓');}
+async function delNews(id){news=news.filter(x=>x.id!==id);render();await sb(`news?id=eq.${id}`,{method:'DELETE'});toast('Article supprimé');}
+async function delAllNews(){news=[];render();await sb(`news?week_key=eq.${weekKey()}`,{method:'DELETE'});toast('Articles supprimés');}
+async function delFav(id){await sb(`favorites?news_id=eq.${id}`,{method:'DELETE'});favs.delete(id);render();toast('Retiré des favoris');}
+async function delAllFavs(){const ids=[...favs].join(',');if(!ids)return;await sb(`favorites?news_id=in.(${ids})`,{method:'DELETE'});favs.clear();render();toast('Favoris vidés');}
 function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2200);}
 function setP(p){document.getElementById('lf').style.width=p+'%';document.getElementById('lpct').textContent=Math.round(p)+'%';}
 
@@ -448,78 +489,177 @@ async function launch(){
   const active=sources.filter(s=>s.is_on);
   if(!active.length)return toast('Activez au moins une source');
   const btn=document.getElementById('gob');
-  btn.disabled=true;btn.innerHTML='<div class="spin"></div> Analyse…';
+  btn.disabled=true;btn.innerHTML='<div class="spin"></div> Scan…';
   const lov=document.getElementById('lov');lov.classList.add('show');
-  const steps=[...active.map(s=>`Lecture : ${s.name}`),'Scoring & filtrage','Sauvegarde'];
-  let cur=0;
-  const renderSteps=()=>{document.getElementById('lsteps').innerHTML=steps.map((s,i)=>`<div class="lstep${i<cur?' done':i===cur?' cur':''}"><div class="ldot"></div>${s}${i<cur?' ✓':''}</div>`).join('');};
-  renderSteps();setP(2);
-  for(let i=0;i<active.length;i++){
-    document.getElementById('lmsg').textContent=`Lecture de ${active[i].name}…`;
-    setP(5+Math.round((i/active.length)*55));cur=i;renderSteps();
-    await new Promise(r=>setTimeout(r,200));cur=i+1;renderSteps();
-  }
-  document.getElementById('lmsg').textContent='Scoring…';setP(65);cur=active.length;renderSteps();
+  document.getElementById('lsteps').innerHTML='';
+  setP(5);
+  document.getElementById('lmsg').textContent='Recherche d\'articles…';
   const today=new Date().toLocaleDateString('fr-FR',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
-  const prompt=`Veille IA Cercle IA — ${today}
-Sources: ${active.map(s=>`${s.name}(${s.cat})`).join(', ')}
+  const scanPrompt=`Veille IA Cercle IA — ${today}
 
-Génère 10 actualités IA réalistes de cette semaine pour des professionnels (avocats, RH, médecins, consultants, dirigeants PME).
+Utilise web_search pour trouver 7 articles IA publiés dans les 7 derniers jours.
+Sources prioritaires :
+${active.map(s=>`- ${s.name} (${s.cat})`).join('\n')}
 
-IMPORTANT: Retourne UNIQUEMENT un tableau JSON minifié sur UNE SEULE LIGNE (zéro retour à la ligne dans le JSON, zéro texte avant ou après, commence immédiatement par [).
-Format exact de chaque objet: {"id":"n1","title":"titre court","source":"source","url":"https://...","date":"JJ/MM/AAAA","category":"IA Générale & Big Tech|Métiers & Professions|Réglementation & Éthique|Éducation & Formation|Outils & Usages Pratiques|Société & Emploi","summary":"1-2 phrases max 60 mots","full_text":"3-4 phrases max 60 mots","score":40-98,"scores":{"metier":0-40,"impact":0-25,"source":0-15,"fraicheur":0-10,"viral":0-10},"angles":[{"name":"nom court","description":"1 phrase 15 mots max","type":"Visibilité"},{"name":"nom","description":"1 phrase 15 mots max","type":"Crédibilité"},{"name":"nom","description":"1 phrase 15 mots max","type":"Visibilité"}]}
+RÈGLES : articles réels uniquement, URL vérifiable, date ≤ 7 jours, pertinents pour des professionnels non-techniques (avocats, RH, médecins, dirigeants).
 
-Règles score: metier 35-40=direct, 20-34=redirigeable; impact 22-25=changement concret; source 13-15=institution majeure; fraicheur 9-10=<3j; viral 9-10=chiffre choc. score=somme. Max 5/catégorie. Ordre décroissant. Score<40 exclus.`;
+Retourne UNIQUEMENT ce tableau JSON sur une seule ligne (commence par [, aucun texte avant ou après) :
+[{"id":"n1","title":"titre exact","source":"nom du média","url":"https://url-article","date":"JJ/MM/AAAA","category":"catégorie"}]
+Catégories : IA Générale & Big Tech | Métiers & Professions | Réglementation & Éthique | Éducation & Formation | Outils & Usages Pratiques | Société & Emploi`;
 
+  let scanSecs=0;
+  const lTick=setInterval(()=>{
+    scanSecs++;
+    setP(Math.min(88,5+Math.round((scanSecs/60)*83)));
+    const m=Math.floor(scanSecs/60),s=scanSecs%60;
+    document.getElementById('lmsg').textContent=`Recherche web… ${m>0?m+'min ':''}${s}s`;
+  },1000);
   try{
     const resp=await fetch(PROXY,{
       method:'POST',
       headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:3500,messages:[{role:'user',content:prompt}]})
+      body:JSON.stringify({mode:'scan',model:'claude-sonnet-4-6',max_tokens:1500,messages:[{role:'user',content:scanPrompt}]})
     });
+    clearInterval(lTick);
     if(!resp.ok){
       const errText=await resp.text();
       const proxySource=resp.headers.get('X-Proxy-Error-Source');
-      const prefix=proxySource==='anthropic'?'Anthropic':'Proxy';
-      throw new Error(prefix+' '+resp.status+': '+errText);
+      throw new Error((proxySource==='anthropic'?'Anthropic':'Proxy')+' '+resp.status+': '+errText);
     }
     const data=await resp.json();
-    const raw=data.content.filter(b=>b.type==='text').map(b=>b.text).join('');
-    setP(88);document.getElementById('lmsg').textContent='Sauvegarde…';cur=active.length+1;renderSteps();
-    const s=raw.indexOf('['),e=raw.lastIndexOf(']');
-    if(s===-1||e===-1||e<=s)throw new Error('Réponse JSON invalide');
-    let jsonStr=raw.slice(s,e+1);
-    // sanitize control characters that break JSON parsing
-    jsonStr=jsonStr.replace(/[\x00-\x08\x0b\x0c\x0e-\x1f]/g,'');
-    let parsed;
-    try{parsed=JSON.parse(jsonStr);}catch(je){
-      // attempt recovery: extract all complete objects from the array
-      const objs=[];let depth=0,start=-1;
-      for(let i=0;i<jsonStr.length;i++){
-        if(jsonStr[i]==='{'){if(depth===0)start=i;depth++;}
-        else if(jsonStr[i]==='}'){depth--;if(depth===0&&start!==-1){try{objs.push(JSON.parse(jsonStr.slice(start,i+1)));start=-1;}catch{}}}
-      }
-      if(!objs.length)throw new Error('Réponse Claude illisible — relancez la veille');
-      parsed=objs;
-    }
-    news=parsed.filter(n=>n.score>=40).sort((a,b)=>b.score-a.score);
-    await saveAllNews(news);
-    setP(100);cur=steps.length;renderSteps();
-    await new Promise(r=>setTimeout(r,400));
-    lov.classList.remove('show');render();toast(`${news.length} news analysées ✓`);
-  }catch(err){
+    if(data.error)throw new Error(data.error.message||JSON.stringify(data.error));
+    const raw=(data.content||[]).filter(b=>b.type==='text').map(b=>b.text).join('');
+    console.log('Scan brut:',raw.slice(0,300));
+    const s=raw.search(/\[\s*\{/),e=raw.lastIndexOf(']');
+    if(s===-1||e===-1||e<=s)throw new Error('Réponse scan invalide — vérifiez la console (F12)');
+    let jsonStr=raw.slice(s,e+1).replace(/[\x00-\x08\x0b\x0c\x0e-\x1f]/g,'');
+    const scanned=JSON.parse(jsonStr);
+    setP(100);
     lov.classList.remove('show');
-    console.error('Erreur veille:',err);
+    scanResults=scanned.map(a=>({...a,id:a.id||'n'+Math.random().toString(36).slice(2,8)}));
+    showScanUI();
+    toast(`${scanResults.length} articles trouvés — sélectionnez ceux à développer`);
+  }catch(err){
+    clearInterval(lTick);
+    lov.classList.remove('show');
+    console.error('Erreur scan:',err);
     const msg=err.message||'';
-    if(/timeout|idle|partial|stream/i.test(msg))toast('Délai dépassé — relancez la veille (réponse trop longue)');
+    if(/429|rate.?limit/i.test(msg))toast('Limite de requêtes atteinte — attendez 1 min et relancez');
+    else if(/timeout/i.test(msg))toast('Délai dépassé — relancez le scan');
     else if(/401|403|api.key/i.test(msg))toast('Clé API invalide — vérifiez ANTHROPIC_API_KEY dans Vercel');
-    else if(/Anthropic 404/i.test(msg))toast('Modèle Claude introuvable côté Anthropic — model ID mis à jour, redéployez');
     else if(/404/i.test(msg))toast('Route /api/claude introuvable — vérifiez le déploiement Vercel');
-    else toast('Erreur Claude : '+(msg.length>80?msg.slice(0,80)+'…':msg));
+    else if(/web.search|not.*enabled/i.test(msg))toast('Web search non activé — activez dans console.anthropic.com → Settings → Privacy');
+    else if(/JSON invalide|invalide/i.test(msg))toast('Réponse invalide — ouvrez F12 console pour détails');
+    else toast('Erreur scan : '+(msg.length>80?msg.slice(0,80)+'…':msg));
   }finally{
+    clearInterval(lTick);
     btn.disabled=false;
     btn.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8" fill="currentColor" stroke="none"/></svg> Lancer la veille';
   }
+}
+
+function showScanUI(){
+  document.getElementById('empt').style.display='none';
+  const rs=document.getElementById('res');
+  rs.style.display='block';
+  rs.innerHTML=`
+    <div class="scan-hdr">
+      <div class="scan-title">${scanResults.length} articles trouvés</div>
+      <div class="scan-sub">Sélectionnez les articles à analyser, puis cliquez sur Développer.</div>
+    </div>
+    <div class="scan-actions">
+      <button class="btn-selall" onclick="toggleAll()">Tout sélectionner / désélectionner</button>
+      <button class="btn-develop" id="devBtn" onclick="develop()">
+        <svg viewBox="0 0 24 24" width="13" height="13"><path d="M13 10V3L4 14h7v7l9-11h-7z" fill="currentColor"/></svg>
+        Développer <span id="selCnt">${scanResults.length}</span> articles
+      </button>
+    </div>
+    <div class="scan-list">
+      ${scanResults.map(a=>`
+        <label class="scan-item">
+          <input type="checkbox" class="scan-cb" data-id="${esc(a.id)}" checked onchange="updateSelCount()">
+          <div class="scan-item-body">
+            <div class="scan-meta"><span class="csrc">${esc(a.source)}</span><span class="cdot-s">·</span><span class="cdate">${esc(a.date)}</span><span class="scan-cat-tag">${esc(a.category)}</span></div>
+            <div class="scan-ititle">${esc(a.title)}</div>
+          </div>
+          <a class="scan-link" href="${esc(a.url)}" target="_blank" rel="noopener noreferrer" title="Voir l'article" onclick="event.stopPropagation()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3"/></svg></a>
+        </label>
+      `).join('')}
+    </div>`;
+}
+
+function updateSelCount(){
+  const cnt=document.querySelectorAll('.scan-cb:checked').length;
+  const el=document.getElementById('selCnt');
+  if(el)el.textContent=cnt;
+}
+
+function toggleAll(){
+  const cbs=[...document.querySelectorAll('.scan-cb')];
+  const allChecked=cbs.every(cb=>cb.checked);
+  cbs.forEach(cb=>cb.checked=!allChecked);
+  updateSelCount();
+}
+
+async function develop(){
+  const selected=[...document.querySelectorAll('.scan-cb:checked')].map(cb=>cb.dataset.id);
+  if(!selected.length)return toast('Sélectionnez au moins un article');
+  const todev=scanResults.filter(a=>selected.includes(a.id));
+  const btn=document.getElementById('gob');
+  btn.disabled=true;
+  const devBtn=document.getElementById('devBtn');
+  if(devBtn)devBtn.disabled=true;
+  const lov=document.getElementById('lov');
+  lov.classList.add('show');
+  setP(0);
+  const developed=[];
+  for(let i=0;i<todev.length;i++){
+    const art=todev[i];
+    setP(Math.round((i/todev.length)*88));
+    document.getElementById('lmsg').textContent=`Analyse ${i+1}/${todev.length}…`;
+    document.getElementById('lsteps').innerHTML=`<div class="lstep cur"><div class="ldot"></div>${esc(art.source)} — ${esc(art.title.slice(0,40))}…</div>`;
+    const devPrompt=`Analyse cet article IA pour des professionnels francophones non-techniques (avocats, RH, médecins, consultants, dirigeants).
+
+Titre : ${art.title}
+Source : ${art.source} | Date : ${art.date} | Catégorie : ${art.category}
+
+Retourne UNIQUEMENT ce JSON minifié sur une seule ligne (commence par {, aucun texte avant ou après) :
+{"summary":"résumé 1-2 phrases 50 mots max en français","full_text":"analyse 3-4 phrases 80 mots en français","score":40-98,"scores":{"metier":0-40,"impact":0-25,"source":0-15,"fraicheur":0-10,"viral":0-10},"angles":[{"name":"nom court","description":"1 phrase 15 mots max","type":"Visibilité"},{"name":"nom court","description":"1 phrase 15 mots max","type":"Crédibilité"},{"name":"nom court","description":"1 phrase 15 mots max","type":"Visibilité"}]}
+Règles score : metier 35-40=direct, 20-34=redirigeable; impact 22-25=changement concret; source 13-15=institution majeure; fraicheur 9-10=<3j; viral 9-10=chiffre choc. score=somme.`;
+    try{
+      const resp=await fetch(PROXY,{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({mode:'develop',model:'claude-sonnet-4-6',max_tokens:600,messages:[{role:'user',content:devPrompt}]})
+      });
+      if(!resp.ok){console.warn(`Develop HTTP ${resp.status} for ${art.id}`);developed.push({...art,summary:'Analyse indisponible',full_text:'',score:50,scores:null,angles:[]});continue;}
+      const data=await resp.json();
+      if(data.error){console.warn('API error for '+art.id,data.error);developed.push({...art,summary:'Analyse indisponible',full_text:'',score:50,scores:null,angles:[]});continue;}
+      const raw=(data.content||[]).filter(b=>b.type==='text').map(b=>b.text).join('');
+      const s=raw.indexOf('{'),e=raw.lastIndexOf('}');
+      if(s===-1||e===-1){developed.push({...art,summary:'Analyse indisponible',full_text:'',score:50,scores:null,angles:[]});continue;}
+      let analysis;
+      try{analysis=JSON.parse(raw.slice(s,e+1).replace(/[\x00-\x08\x0b\x0c\x0e-\x1f]/g,''));}
+      catch{analysis={summary:'Analyse indisponible',full_text:'',score:50,scores:null,angles:[]};}
+      developed.push({...art,...analysis});
+    }catch(err){
+      console.warn('Develop error for '+art.id,err);
+      developed.push({...art,summary:'Analyse indisponible',full_text:'',score:50,scores:null,angles:[]});
+    }
+  }
+  setP(95);
+  document.getElementById('lmsg').textContent='Sauvegarde…';
+  document.getElementById('lsteps').innerHTML='';
+  news=developed.filter(n=>n.score>=40).sort((a,b)=>b.score-a.score);
+  scanResults=[];
+  try{await saveAllNews(news);}catch(err){console.warn('Save error:',err);}
+  setP(100);
+  await new Promise(r=>setTimeout(r,300));
+  lov.classList.remove('show');
+  render();
+  toast(`${news.length} articles analysés ✓`);
+  btn.disabled=false;
+  btn.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8" fill="currentColor" stroke="none"/></svg> Lancer la veille';
 }
 
 async function init(){

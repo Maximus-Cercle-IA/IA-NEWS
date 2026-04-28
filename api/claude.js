@@ -10,6 +10,15 @@ module.exports = async function handler(req, res) {
   if (!apiKey) return res.status(500).json({ error: 'Clé API manquante — ajoutez ANTHROPIC_API_KEY dans les variables Vercel' });
 
   try {
+    const { mode, ...body } = req.body;
+    const payload = { ...body };
+
+    // scan phase: one web search to find article titles/URLs only
+    if (mode === 'scan') {
+      payload.tools = [{ type: 'web_search_20260209', name: 'web_search', max_uses: 1 }];
+    }
+    // develop phase: pure text analysis, no web search = no token explosion
+
     const r = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
@@ -17,7 +26,7 @@ module.exports = async function handler(req, res) {
         'x-api-key': apiKey,
         'anthropic-version': '2023-06-01',
       },
-      body: JSON.stringify({ ...req.body, stream: false }),
+      body: JSON.stringify(payload),
     });
     const data = await r.json();
     if (!r.ok) {
