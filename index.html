@@ -514,10 +514,15 @@ Règles score: metier 35-40=direct, 20-34=redirigeable; impact 22-25=changement 
       throw new Error(prefix+' '+resp.status+': '+errText);
     }
     const data=await resp.json();
+    if(!data.content){
+      console.error('Réponse API inattendue:',data);
+      throw new Error(data.error?.message||'Réponse API invalide (pas de content)');
+    }
     const raw=data.content.filter(b=>b.type==='text').map(b=>b.text).join('');
+    console.log('Réponse brute Claude:',raw.slice(0,300));
     setP(88);document.getElementById('lmsg').textContent='Sauvegarde…';cur=active.length+1;renderSteps();
-    const s=raw.indexOf('['),e=raw.lastIndexOf(']');
-    if(s===-1||e===-1||e<=s)throw new Error('Réponse JSON invalide');
+    const s=raw.search(/\[\s*\{/),e=raw.lastIndexOf(']');
+    if(s===-1||e===-1||e<=s)throw new Error('Réponse JSON invalide — vérifiez la console (F12)');
     let jsonStr=raw.slice(s,e+1);
     // sanitize control characters that break JSON parsing
     jsonStr=jsonStr.replace(/[\x00-\x08\x0b\x0c\x0e-\x1f]/g,'');
@@ -545,6 +550,8 @@ Règles score: metier 35-40=direct, 20-34=redirigeable; impact 22-25=changement 
     else if(/401|403|api.key/i.test(msg))toast('Clé API invalide — vérifiez ANTHROPIC_API_KEY dans Vercel');
     else if(/Anthropic 404/i.test(msg))toast('Modèle Claude introuvable côté Anthropic — model ID mis à jour, redéployez');
     else if(/404/i.test(msg))toast('Route /api/claude introuvable — vérifiez le déploiement Vercel');
+    else if(/web.search|search.*not.*enabled|not.*enabled.*search/i.test(msg))toast('Web search non activé — activez dans console.anthropic.com → Settings → Privacy');
+    else if(/JSON invalide/i.test(msg))toast('Réponse JSON invalide — ouvrez F12 console pour voir la réponse brute de Claude');
     else toast('Erreur Claude : '+(msg.length>80?msg.slice(0,80)+'…':msg));
   }finally{
     btn.disabled=false;
