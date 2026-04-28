@@ -327,8 +327,13 @@ async function addSrc(){
   const s={id:'c'+Date.now(),name:name||host,url,cat,is_on:true,position:sources.length+1};
   sources.push(s);renderSrcs();
   document.getElementById('nu').value='';document.getElementById('nn').value='';document.getElementById('nc').selectedIndex=0;
-  await sb('sources',{method:'POST',body:JSON.stringify(s),headers:{'Prefer':'resolution=merge-duplicates,return=minimal'}});
-  toast('Source ajoutée ✓');
+  try{
+    await sb('sources',{method:'POST',body:JSON.stringify(s),headers:{'Prefer':'resolution=merge-duplicates,return=minimal'}});
+    toast('Source ajoutée ✓');
+  }catch(err){
+    console.error('addSrc:',err);
+    toast('Source ajoutée localement (erreur DB : '+err.message.slice(0,60)+')');
+  }
 }
 
 function onScore(v){scoreMin=parseInt(v);document.getElementById('svd').textContent=v;render();}
@@ -558,12 +563,15 @@ async function launch(){
 
 async function init(){
   setWeek();
+  // load sources independently so sidebar always renders even if news/favs fail
+  try{await loadSources();}catch(e){console.error('loadSources:',e);}
+  renderSrcs();
   try{
-    await Promise.all([loadSources(),loadNews(),loadFavs()]);
-    renderSrcs();if(news.length)render();
+    await Promise.all([loadNews(),loadFavs()]);
+    if(news.length)render();
   }catch(err){
-    console.error('Init:',err);
-    toast('Erreur connexion Supabase — vérifiez la console');
+    console.error('Init (news/favs):',err);
+    toast('Erreur chargement données — vérifiez la console (F12)');
   }
 }
 init();
