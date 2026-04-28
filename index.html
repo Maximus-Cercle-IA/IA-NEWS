@@ -467,12 +467,20 @@ async function launch(){
   document.getElementById('lmsg').textContent='Scoring…';setP(65);cur=active.length;renderSteps();
   const today=new Date().toLocaleDateString('fr-FR',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
   const prompt=`Veille IA Cercle IA — ${today}
-Sources: ${active.map(s=>`${s.name}(${s.cat})`).join(', ')}
 
-Génère 10 actualités IA réalistes de cette semaine pour des professionnels (avocats, RH, médecins, consultants, dirigeants PME).
+Tu es un assistant de veille IA pour des professionnels francophones non-techniques (avocats, RH, médecins, consultants, dirigeants PME).
 
-IMPORTANT: Retourne UNIQUEMENT un tableau JSON minifié sur UNE SEULE LIGNE (zéro retour à la ligne dans le JSON, zéro texte avant ou après, commence immédiatement par [).
-Format exact de chaque objet: {"id":"n1","title":"titre court","source":"source","url":"https://...","date":"JJ/MM/AAAA","category":"IA Générale & Big Tech|Métiers & Professions|Réglementation & Éthique|Éducation & Formation|Outils & Usages Pratiques|Société & Emploi","summary":"1-2 phrases max 60 mots","full_text":"3-4 phrases max 60 mots","score":40-98,"scores":{"metier":0-40,"impact":0-25,"source":0-15,"fraicheur":0-10,"viral":0-10},"angles":[{"name":"nom court","description":"1 phrase 15 mots max","type":"Visibilité"},{"name":"nom","description":"1 phrase 15 mots max","type":"Crédibilité"},{"name":"nom","description":"1 phrase 15 mots max","type":"Visibilité"}]}
+MISSION : Utilise web_search pour trouver 10 vrais articles IA publiés cette semaine (7 derniers jours maximum). Cherche sur ces sources en priorité :
+${active.map(s=>`- ${s.name} (${s.cat})`).join('\n')}
+
+RÈGLES ABSOLUES :
+- Chaque article doit exister réellement — URL vérifiable et fonctionnelle
+- Date de publication dans les 7 derniers jours
+- Pertinent pour des professionnels non-techniques face à l'IA dans leur métier
+- Si une source n'a pas d'article récent pertinent, cherche sur d'autres médias sérieux
+
+IMPORTANT: Une fois les articles trouvés, retourne UNIQUEMENT un tableau JSON minifié sur UNE SEULE LIGNE (zéro retour à la ligne dans le JSON, zéro texte avant ou après, commence immédiatement par [).
+Format exact: {"id":"n1","title":"titre court","source":"nom du média","url":"https://url-reelle-article","date":"JJ/MM/AAAA","category":"IA Générale & Big Tech|Métiers & Professions|Réglementation & Éthique|Éducation & Formation|Outils & Usages Pratiques|Société & Emploi","summary":"1-2 phrases max 60 mots en français","full_text":"3-4 phrases max 60 mots en français","score":40-98,"scores":{"metier":0-40,"impact":0-25,"source":0-15,"fraicheur":0-10,"viral":0-10},"angles":[{"name":"nom court","description":"1 phrase 15 mots max","type":"Visibilité"},{"name":"nom","description":"1 phrase 15 mots max","type":"Crédibilité"},{"name":"nom","description":"1 phrase 15 mots max","type":"Visibilité"}]}
 
 Règles score: metier 35-40=direct, 20-34=redirigeable; impact 22-25=changement concret; source 13-15=institution majeure; fraicheur 9-10=<3j; viral 9-10=chiffre choc. score=somme. Max 5/catégorie. Ordre décroissant. Score<40 exclus.`;
 
@@ -480,7 +488,7 @@ Règles score: metier 35-40=direct, 20-34=redirigeable; impact 22-25=changement 
     const resp=await fetch(PROXY,{
       method:'POST',
       headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:3500,messages:[{role:'user',content:prompt}]})
+      body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:8000,messages:[{role:'user',content:prompt}]})
     });
     if(!resp.ok){
       const errText=await resp.text();
