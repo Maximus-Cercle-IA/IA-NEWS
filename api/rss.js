@@ -58,7 +58,6 @@ function getImage(b) {
   if (m) return m[1];
   m = b.match(/<itunes:image\b[^>]+href="([^"]+)"/i);
   if (m) return m[1];
-  // extract first <img src> from description CDATA
   const desc = b.match(/<description[^>]*>(?:<!\[CDATA\[)?([\s\S]*?)(?:\]\]>)?<\/description>/i);
   if (desc) {
     const im = desc[1].match(/<img\b[^>]+src="([^"]+)"/i);
@@ -72,7 +71,7 @@ function getExcerpt(b) {
     const m = b.match(new RegExp(`<${tag}[^>]*>(?:<!\\[CDATA\\[)?([\\s\\S]*?)(?:\\]\\]>)?<\\/${tag}>`, 'i'));
     if (!m) continue;
     const t = m[1].replace(/<[^>]+>/g, ' ').replace(/&[a-z#0-9]+;/gi, ' ').replace(/\s+/g, ' ').trim();
-    if (t.length > 30) return t.slice(0, 200) + (t.length > 200 ? '…' : '');
+    if (t.length > 30) return t.slice(0, 300) + (t.length > 300 ? '…' : '');
   }
   return '';
 }
@@ -107,7 +106,18 @@ function findRSSInHTML(html, base) {
   try { return new URL(m[1], base).href; } catch { return null; }
 }
 
-async function fetchFeedForSource(srcUrl) {
+async function fetchFeedForSource(srcUrl, directRssUrl) {
+  // Try the explicit RSS URL first when provided
+  if (directRssUrl) {
+    try {
+      const text = await get(directRssUrl, 6000);
+      if (isFeed(text)) {
+        const items = parseFeed(text);
+        if (items.length) return items;
+      }
+    } catch {}
+  }
+
   let base;
   try { base = new URL(srcUrl); } catch { return []; }
   const origin = base.origin;
@@ -172,9 +182,9 @@ module.exports = async function handler(req, res) {
   const allResults = await Promise.all(
     sources.map(async src => {
       try {
-        const items = await fetchFeedForSource(src.url);
+        const items = await fetchFeedForSource(src.url, src.rss_url);
         const cat = CAT_MAP[src.cat] || 'IA Générale & Big Tech';
-        return items.slice(0, 3).map(item => ({
+        return items.slice(0, 5).map(item => ({
           id: 'n' + Math.random().toString(36).slice(2, 8),
           title: item.title,
           source: src.name,
