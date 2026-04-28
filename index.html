@@ -89,7 +89,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;heigh
 .cat-lbl{font-size:10px;font-weight:500;letter-spacing:.14em;text-transform:uppercase;color:#fff;padding:4px 10px;border-radius:3px}
 .cat-cnt{font-size:11px;color:var(--mu)}
 .cat-div{flex:1;height:1px;background:var(--bdr)}
-.news-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(360px,1fr));gap:14px}
+.news-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(360px,1fr));gap:14px;align-items:start}
 .card{background:var(--surf);border:1px solid var(--bdr);border-radius:6px;overflow:hidden;transition:border-color .2s,box-shadow .2s}
 .card:hover{border-color:var(--bdr2);box-shadow:0 6px 24px rgba(0,0,0,.25)}
 .card.fav{border-color:rgba(200,160,64,.3)}
@@ -101,8 +101,8 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;heigh
 .cdot-s{color:var(--bdr2)}
 .ctitle{font-size:14px;font-weight:500;color:var(--cr);line-height:1.4}
 .ch-r{display:flex;flex-direction:column;align-items:flex-end;gap:7px;flex-shrink:0}
-.fv-btn{background:transparent;border:none;cursor:pointer;font-size:15px;opacity:.3;transition:opacity .2s;padding:2px}
-.fv-btn:hover{opacity:.7}
+.fv-btn{background:transparent;border:none;cursor:pointer;font-size:16px;opacity:.55;transition:opacity .2s,transform .15s;padding:2px}
+.fv-btn:hover{opacity:.9;transform:scale(1.15)}
 .fv-btn.on{opacity:1}
 .sc{width:38px;height:38px;border-radius:50%;display:grid;place-items:center;font-size:12px;font-weight:500;border:1.5px solid;flex-shrink:0}
 .sc-a{background:var(--gn-bg);border-color:var(--gn);color:#5dc488}
@@ -471,7 +471,10 @@ function render(){
 }
 
 function togX(id,type){
-  if(!xp[id])xp[id]={};xp[id][type]=!xp[id][type];
+  if(!xp[id])xp[id]={};
+  const was=xp[id][type];
+  xp[id]={};
+  if(!was)xp[id][type]=true;
   const c=document.getElementById(`cd_${id}`);const n=news.find(x=>x.id===id);
   if(c&&n)c.outerHTML=cardH(n);
 }
@@ -504,7 +507,7 @@ function scoreIA(title,excerpt){
 
 async function devAllArticles(articles){
   if(!articles.length)return[];
-  const list=articles.map((a,i)=>`---\nTitre : ${a.title}\nSource : ${a.source}\nURL : ${a.url}\nDate : ${a.date}\nDescription : ${(a.excerpt||'').slice(0,280)}\n---`).join('\n');
+  const list=articles.map((a,i)=>`---\nTitre : ${a.title}\nSource : ${a.source}\nURL : ${a.url}\nDate : ${a.date}\nDescription : ${(a.excerpt||'').slice(0,150)}\n---`).join('\n');
   const prompt=`Tu es un assistant de veille pour Cercle IA, qui forme des professionnels (avocats, RH, médecins, consultants, dirigeants PME) à l'IA.\n\nVoici ${articles.length} articles récupérés cette semaine :\n\n${list}\n\nPour chaque article PERTINENT pour Cercle IA (score >= 40), génère un objet JSON. Ignore les non pertinents. Maximum 5 articles par catégorie.\n\nCatégories : "IA Générale & Big Tech" | "Métiers & Professions" | "Réglementation & Éthique" | "Éducation & Formation" | "Outils & Usages Pratiques" | "Société & Emploi"\n\nRetourne UNIQUEMENT un tableau JSON valide commençant par [ :\n[{"id":"n1","title":"titre","source":"source","url":"url exacte fournie — ne pas inventer","date":"JJ/MM/AAAA","category":"catégorie","summary":"2-3 phrases en français décodant l'article pour un professionnel précis — jamais une reprise brute du titre","full_text":"analyse complète 80-100 mots en français","score":40-98,"scores":{"metier":0-40,"impact":0-25,"source":0-15,"fraicheur":0-10,"viral":0-10},"angles":[{"name":"nom court","description":"angle LinkedIn concret et actionnable","type":"Visibilité"},{"name":"nom court","description":"angle","type":"Crédibilité"},{"name":"nom court","description":"angle","type":"Visibilité"}]}]\n\nRègles scoring : metier 35-40=impact direct avocat/RH/médecin/consultant; 20-34=angle métier possible; impact 22-25=changement concret; source 13-15=institution majeure; fraicheur 9-10=<3j; viral 9-10=stat choc ou rupture. score=somme exacte. Exclure score<40.`;
   try{
     const resp=await fetch(PROXY,{method:'POST',headers:{'Content-Type':'application/json'},
@@ -533,9 +536,10 @@ async function launch(){
     const all=await rssResp.json();
     if(!all.length)throw new Error('Aucun article trouvé dans les flux RSS — vérifiez que vos sources sont actives');
     setP(25);document.getElementById('lmsg').textContent='Tri pertinence IA…';
-    const scored=all.map(a=>({...a,_ias:scoreIA(a.title,a.excerpt)})).sort((a,b)=>b._ias-a._ias);
-    const relevant=scored.filter(a=>a._ias>0);
-    const todev=(relevant.length?relevant:scored).slice(0,15);
+    const JUNK=/\b(about|contact|newsletter|subscribe|privacy|terms|cookie|careers|advertise|press kit|sitemap)\b/i;
+    const scored=all.filter(a=>!JUNK.test(a.title)).map(a=>({...a,_ias:scoreIA(a.title,a.excerpt)})).sort((a,b)=>b._ias-a._ias);
+    const relevant=scored.filter(a=>a._ias>=3);
+    const todev=(relevant.length>=2?relevant:scored.filter(a=>a._ias>0)).slice(0,8);
     document.getElementById('lsteps').innerHTML=todev.slice(0,5).map(a=>`<div class="lstep done"><div class="ldot"></div>${esc(a.source)} — ${esc(a.title.slice(0,36))}…</div>`).join('')+(todev.length>5?`<div class="lstep"><div class="ldot"></div>+${todev.length-5} autres en cours…</div>`:'');
     setP(35);document.getElementById('lmsg').textContent=`Analyse Claude de ${todev.length} articles…`;
     const analyzed=await devAllArticles(todev);
